@@ -20,9 +20,9 @@ CONFIG = {
         "user": {
             "title": t("Connect your JK BMS units", "Je JK BMS'en koppelen", "JK BMS verbinden"),
             "description": t(
-                "How are the BMS units connected to Home Assistant? Most people use a USB-to-RS485 stick on the RS485 port of the BMS (the same port the JK PC software uses).",
-                "Hoe zitten de BMS'en aan Home Assistant? Meestal is dat een USB-naar-RS485-stick op de RS485-poort van de BMS (dezelfde poort als de JK-pc-software).",
-                "Wie sind die BMS mit Home Assistant verbunden? Meist mit einem USB-RS485-Stick am RS485-Port des BMS (derselbe Port wie die JK-PC-Software).",
+                "How are the BMS units connected?\n\n**What you need:** a USB-RS485 adapter (preferably FTDI FT232R) or an RS485 network gateway, and a CAT5/6 cable cut open at one end: RJ45 **pin 1 = B (D−)**, **pin 2 = A (D+)**, **pin 3 = GND** (white-orange, orange, white-green).\n\n**Where:** the free **RS485-2** (parallel) socket on the communication board of the first or last pack — not CAN / RS485-1, that one goes to the inverter. Every pack needs its own DIP address.",
+                "Hoe zitten de BMS'en aan Home Assistant?\n\n**Wat je nodig hebt:** een USB-RS485-adapter (liefst met FTDI FT232R-chip) of een RS485-netwerkgateway, en een netwerkkabel (CAT5/6) die je aan één kant doorknipt: RJ45 **pin 1 = B (D−)**, **pin 2 = A (D+)**, **pin 3 = GND** (wit-oranje, oranje, wit-groen).\n\n**Waar:** in de vrije **RS485-2**-bus (parallel) op de communicatieprint van het eerste of laatste pakket — niet in CAN / RS485-1, die gaat naar de omvormer. Elk pakket heeft een eigen DIP-adres.",
+                "Wie sind die BMS verbunden?\n\n**Was du brauchst:** einen USB-RS485-Adapter (am besten FTDI FT232R) oder ein RS485-Netzwerk-Gateway und ein CAT5/6-Kabel, an einem Ende abgeschnitten: RJ45 **Pin 1 = B (D−)**, **Pin 2 = A (D+)**, **Pin 3 = GND** (weiß-orange, orange, weiß-grün).\n\n**Wo:** die freie **RS485-2**-Buchse (Parallel) auf der Kommunikationsplatine des ersten oder letzten Packs — nicht CAN / RS485-1, die geht zum Wechselrichter. Jedes Pack braucht eine eigene DIP-Adresse.",
             ),
             "menu_options": {
                 "usb": t("USB-RS485 stick", "USB-RS485-stick", "USB-RS485-Stick"),
@@ -67,9 +67,9 @@ CONFIG = {
         "failed": {
             "title": t("No JK BMS found yet", "Nog geen JK BMS gevonden", "Noch kein JK BMS gefunden"),
             "description": t(
-                "Details: {detail}\n\nCheck: A/B wires (swap them if nothing comes in), the RS485 port of the BMS, and that no add-on uses the port. Tick the box to search again, untick to choose another port.",
-                "Details: {detail}\n\nControleer: de A/B-draden (omwisselen als er niets binnenkomt), de RS485-poort van de BMS en of geen add-on de poort gebruikt. Vinkje aan = opnieuw zoeken, uit = andere poort kiezen.",
-                "Details: {detail}\n\nPrüfe: A/B-Adern (tauschen, wenn nichts ankommt), den RS485-Port des BMS und ob kein Add-on den Port nutzt. Haken = erneut suchen, ohne Haken = anderen Port wählen.",
+                "Details: {detail}\n\nCheck: the adapter is in the **RS485-2** socket (not CAN / RS485-1), RJ45 pin 1 = B, 2 = A, 3 = GND (swap A and B if nothing comes in), and that no add-on uses the port. Tick the box to search again, untick to choose another port.",
+                "Details: {detail}\n\nControleer: zit de adapter in de **RS485-2**-bus (niet CAN / RS485-1), RJ45 pin 1 = B, 2 = A, 3 = GND (A en B omwisselen als er niets binnenkomt) en of geen add-on de poort gebruikt. Vinkje aan = opnieuw zoeken, uit = andere poort kiezen.",
+                "Details: {detail}\n\nPrüfe: steckt der Adapter in der **RS485-2**-Buchse (nicht CAN / RS485-1), RJ45 Pin 1 = B, 2 = A, 3 = GND (A und B tauschen, wenn nichts ankommt) und ob kein Add-on den Port nutzt. Haken = erneut suchen, ohne Haken = anderen Port wählen.",
             ),
             "data": {"retry": t("Search again on this port", "Opnieuw zoeken op deze poort", "Auf diesem Port erneut suchen")},
         },

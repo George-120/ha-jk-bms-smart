@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Connect your JK BMS units",
-        "description": "How are the BMS units connected to Home Assistant? Most people use a USB-to-RS485 stick on the RS485 port of the BMS (the same port the JK PC software uses).",
+        "description": "How are the BMS units connected?\n\n**What you need:** a USB-RS485 adapter (preferably FTDI FT232R) or an RS485 network gateway, and a CAT5/6 cable cut open at one end: RJ45 **pin 1 = B (D−)**, **pin 2 = A (D+)**, **pin 3 = GND** (white-orange, orange, white-green).\n\n**Where:** the free **RS485-2** (parallel) socket on the communication board of the first or last pack — not CAN / RS485-1, that one goes to the inverter. Every pack needs its own DIP address.",
         "menu_options": {
           "usb": "USB-RS485 stick",
           "network": "RS485 network gateway (Wi-Fi/Ethernet)"
@@ -55,7 +55,7 @@
       },
       "failed": {
         "title": "No JK BMS found yet",
-        "description": "Details: {detail}\n\nCheck: A/B wires (swap them if nothing comes in), the RS485 port of the BMS, and that no add-on uses the port. Tick the box to search again, untick to choose another port.",
+        "description": "Details: {detail}\n\nCheck: the adapter is in the **RS485-2** socket (not CAN / RS485-1), RJ45 pin 1 = B, 2 = A, 3 = GND (swap A and B if nothing comes in), and that no add-on uses the port. Tick the box to search again, untick to choose another port.",
         "data": {
           "retry": "Search again on this port"
         }

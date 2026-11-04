@@ -31,11 +31,22 @@ Deze integratie leest alleen; ze verandert geen instellingen in de BMS.
 3. *Instellingen → Apparaten & diensten → Integratie toevoegen → JK BMS Smart*, kies *USB-RS485-stick* en de stick. Na maximaal 40 seconden zie je de gevonden BMS'en; geef ze een naam.
 4. *Configureren → Dashboard aanmaken*, of zet de kaarten zelf op een dashboard (*JK BMS Smart – Accupakket* en *– Accubank* in de kaartkiezer).
 
-### Aansluiten
+### Wat heb je nodig
 
-- Stick op de **RS485-poort** van de BMS (de RJ45 waarop ook de JK-pc-software werkt), A op A, B op B; komt er niets binnen, wissel A en B dan om. Bij meerdere BMS'en zit de RS485 doorgelust tussen de pakketten.
-- 115200 baud, 8N1 (dat regelt de integratie zelf).
-- Netwerkgateway (Elfin EW11, USR-TCP232, Waveshare): transparante TCP-server, 115200 8N1.
+![Aansluitschema](docs/wiring.svg)
+
+1. **Een USB-naar-RS485-adapter.** Het liefst een met een **FTDI FT232R**-chip (bijvoorbeeld Waveshare *USB TO RS485 (B)* of DSD TECH *SH-U11*); die werkt het stabielst op 115200 baud. Een galvanisch gescheiden (isolated) uitvoering is een pluspunt bij een grote accubank. Goedkope CH340-sticks werken vaak ook, maar missen soms frames. Heb je de Home Assistant-server niet bij de accu staan, dan kan het ook met een RS485-netwerkgateway (Elfin EW11, USR-TCP232, Waveshare RS485 TO ETH) in transparante TCP-servermodus, 115200 8N1.
+2. **Een netwerkkabel (CAT5/6) die je aan één kant doorknipt.** Aan de BMS-kant gaat de RJ45-stekker erin, aan de adapterkant gebruik je drie aders (T568B-kleuren):
+   - pin 1 (wit-oranje) → **B / D−**
+   - pin 2 (oranje) → **A / D+**
+   - pin 3 (wit-groen) → **GND**
+
+   Komt er niets binnen, wissel dan A en B om; dat beschadigt niets.
+3. **De juiste poort.** Op de communicatieprint van de JK inverter-BMS (het groene printje met de RJ45-bussen en de DIP-schakelaar) zitten:
+   - **RS485-2** (twee bussen, "parallel"): hiermee zijn de pakketten aan elkaar doorgelust. **Hier prik je de adapter in**, in de vrije RS485-2-bus van het eerste of laatste pakket in de rij. Heb je maar één pakket, dan gebruik je een van de twee RS485-2-bussen.
+   - **CAN / RS485-1**: die gaat naar de omvormer (Victron, Deye, …). Daar blijf je vanaf; de integratie heeft hem niet nodig en je omvormer blijft gewoon werken.
+4. **DIP-adressen.** Elk pakket een eigen adres. Gebruik je de accu's met een omvormer via CAN, dan is één BMS adres **0** (master) en de rest 1, 2, 3 … De integratie herkent de master en luistert dan alleen mee. Zonder master (alle adressen vanaf 1) vraagt Home Assistant de pakketten zelf uit. Schakelaar 1 = 1, 2 = 2, 3 = 4, 4 = 8 (adres 1: schakelaar 1 aan; adres 2: schakelaar 2 aan; adres 3: 1 en 2 aan).
+5. In de BMS hoef je niets in te stellen: RS485-2 staat standaard op 115200 baud.
 
 ### Problemen oplossen
 
@@ -49,11 +60,15 @@ Read JK inverter BMS units (PB series) straight into Home Assistant over RS485 �
 
 Install via HACS, restart, **stop any add-on that uses the stick**, then add *JK BMS Smart*.
 
+**What you need:** a USB-RS485 adapter, preferably with an **FTDI FT232R** chip (e.g. Waveshare *USB TO RS485 (B)*, DSD TECH *SH-U11*; an isolated one is a plus), or an RS485 network gateway (Elfin EW11, USR-TCP232) in transparent TCP mode. Cut a CAT5/6 cable: RJ45 **pin 1 = B (D−)**, **pin 2 = A (D+)**, **pin 3 = GND** (T568B: white-orange, orange, white-green). Plug it into the free **RS485-2** (parallel) socket of the first or last pack on the communication board, **not** into CAN / RS485-1 (that one goes to the inverter). Give every pack its own DIP address; with an inverter on CAN one pack is address 0 (master) and the integration only listens. Nothing comes in? Swap A and B. See the diagram above.
+
 ## Deutsch
 
 Liest JK-Inverter-BMS (PB-Serie) direkt per RS485 in Home Assistant — USB-RS485-Stick oder RS485-Netzwerk-Gateway, ohne Add-on und ohne MQTT. Die Einrichtung findet alle BMS am Bus und erkennt, ob ein Master-BMS (DIP-Adresse 0) vorhanden ist (dann hört Home Assistant nur mit) oder ob Home Assistant selbst abfragt. Frames werden per Prüfsumme und CRC-geprüfter Modbus-Bestätigung einer Adresse zugeordnet — keine Geistergeräte mehr. Pro Pack: alle Zellspannungen, Balancer, Temperaturen, MOSFETs, Alarme, Energiezähler und Schutzeinstellungen (nur lesen); für die Akkubank Summen. Zwei Karten zeigen die Packs mit ihren prismatischen Zellen und die ganze Bank. *Konfigurieren → Dashboard erstellen* legt ein fertiges Dashboard an.
 
 Über HACS installieren, neu starten, **ein Add-on, das den Stick nutzt, stoppen**, dann *JK BMS Smart* hinzufügen.
+
+**Was du brauchst:** einen USB-RS485-Adapter, am besten mit **FTDI FT232R** (z. B. Waveshare *USB TO RS485 (B)*, DSD TECH *SH-U11*; galvanisch getrennt ist ein Plus), oder ein RS485-Netzwerk-Gateway (Elfin EW11, USR-TCP232) im transparenten TCP-Modus. Ein CAT5/6-Kabel abschneiden: RJ45 **Pin 1 = B (D−)**, **Pin 2 = A (D+)**, **Pin 3 = GND** (T568B: weiß-orange, orange, weiß-grün). In die freie **RS485-2**-Buchse (Parallel) des ersten oder letzten Packs auf der Kommunikationsplatine stecken, **nicht** in CAN / RS485-1 (die geht zum Wechselrichter). Jedes Pack braucht eine eigene DIP-Adresse; mit Wechselrichter per CAN ist ein Pack Adresse 0 (Master) und die Integration hört nur mit. Kommt nichts an? A und B tauschen. Siehe Schema oben.
 
 ---
 

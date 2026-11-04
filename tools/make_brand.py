@@ -1,51 +1,81 @@
-"""Draw the JK BMS Smart icon (original artwork: a prismatic battery pack with a lightning bolt)."""
+"""Build the JK BMS Smart icon: a photo of the BMS on the Easee Smart dark background.
+
+Usage: python3 tools/make_brand.py path/to/bms-photo.png
+The photo's light background is removed by flood-filling from the edges.
+"""
 
 from __future__ import annotations
 
+import sys
+from collections import deque
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent / "custom_components" / "jk_bms_smart"
+BG = (20, 24, 30, 255)  # same as Easee Smart Charging (#14181E)
 
 
-def draw(size: int) -> Image.Image:
-    s = size / 256
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, size - 1, size - 1], radius=int(56 * s), fill=(20, 24, 30, 255))
-    # pack tray
-    d.rounded_rectangle([int(28 * s), int(70 * s), int(228 * s), int(214 * s)], radius=int(18 * s), fill=(28, 33, 41, 255),
-                        outline=(42, 48, 58, 255), width=max(1, int(3 * s)))
-    # 4 prismatic cells with fill levels
-    levels = [0.86, 0.9, 0.82, 0.88]
-    for i, lv in enumerate(levels):
-        x0 = int((44 + i * 44) * s)
-        x1 = int((80 + i * 44) * s)
-        y0, y1 = int(92 * s), int(198 * s)
-        d.rounded_rectangle([x0, y0, x1, y1], radius=int(7 * s), fill=(58, 67, 80, 255))
-        top = int(y1 - (y1 - y0 - 10 * s) * lv)
-        d.rounded_rectangle([x0 + int(4 * s), top, x1 - int(4 * s), y1 - int(4 * s)], radius=int(5 * s), fill=(69, 214, 154, 255))
-        # terminals
-        d.rounded_rectangle([x0 + int(4 * s), int(80 * s), x0 + int(14 * s), int(92 * s)], radius=int(2 * s), fill=(201, 162, 74, 255))
-        d.rounded_rectangle([x1 - int(14 * s), int(80 * s), x1 - int(4 * s), int(92 * s)], radius=int(2 * s), fill=(154, 163, 175, 255))
-    # busbars
-    for i in range(3):
-        xa = int((76 + i * 44) * s)
-        d.rounded_rectangle([xa - int(6 * s), int(80 * s), xa + int(30 * s), int(88 * s)], radius=int(3 * s), fill=(201, 162, 74, 255))
-    # bolt
-    bolt = [(148, 22), (104, 64), (128, 64), (110, 100), (156, 54), (130, 54), (148, 22)]
-    d.polygon([(int(x * s), int(y * s)) for x, y in bolt], fill=(90, 169, 255, 255))
-    return img
+def cut_out(photo: Image.Image, tol: int = 28) -> Image.Image:
+    img = photo.convert("RGBA")
+    w, h = img.size
+    px = img.load()
+    seen = bytearray(w * h)
+    q: deque[tuple[int, int]] = deque()
+    for x in range(w):
+        q.extend([(x, 0), (x, h - 1)])
+    for y in range(h):
+        q.extend([(0, y), (w - 1, y)])
+
+    def light(p: tuple[int, int, int, int]) -> bool:
+        r, g, b, _ = p
+        return min(r, g, b) >= 255 - tol and max(r, g, b) - min(r, g, b) < 18
+
+    while q:
+        x, y = q.popleft()
+        i = y * w + x
+        if seen[i]:
+            continue
+        seen[i] = 1
+        if not light(px[x, y]):
+            continue
+        px[x, y] = (0, 0, 0, 0)
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx]:
+                q.append((nx, ny))
+    # soften the cut edge a little
+    alpha = img.getchannel("A").filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.6))
+    img.putalpha(alpha)
+    return img.crop(img.getbbox())
+
+
+def icon(cut: Image.Image, size: int) -> Image.Image:
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, size - 1, size - 1], radius=int(size * 0.22), fill=255)
+    bg = Image.new("RGBA", (size, size), BG)
+    out.paste(bg, (0, 0), mask)
+    box = int(size * 0.84)
+    scale = min(box / cut.width, box / cut.height)
+    part = cut.resize((max(1, int(cut.width * scale)), max(1, int(cut.height * scale))), Image.LANCZOS)
+    x = (size - part.width) // 2
+    y = (size - part.height) // 2
+    shadow = Image.new("RGBA", part.size, (0, 0, 0, 160))
+    shadow.putalpha(part.getchannel("A").point(lambda a: int(a * 0.55)))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(size / 60))
+    out.alpha_composite(shadow, (x, y + max(1, size // 64)))
+    out.alpha_composite(part, (x, y))
+    return out
 
 
 def main() -> None:
+    cut = cut_out(Image.open(sys.argv[1]))
     brand = ROOT / "brand"
     brand.mkdir(exist_ok=True)
     for name, size in (("icon.png", 256), ("icon@2x.png", 512), ("logo.png", 256), ("logo@2x.png", 512),
                        ("dark_icon.png", 256), ("dark_icon@2x.png", 512), ("dark_logo.png", 256), ("dark_logo@2x.png", 512)):
-        draw(size).save(brand / name, optimize=True)
-    draw(128).save(ROOT / "frontend" / "logo.png", optimize=True)
+        icon(cut, size).save(brand / name, optimize=True)
+    icon(cut, 128).save(ROOT / "frontend" / "logo.png", optimize=True)
 
 
 if __name__ == "__main__":

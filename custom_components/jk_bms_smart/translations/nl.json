@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Je JK BMS'en koppelen",
-        "description": "Hoe zitten de BMS'en aan Home Assistant? Meestal is dat een USB-naar-RS485-stick op de RS485-poort van de BMS (dezelfde poort als de JK-pc-software).",
+        "description": "Hoe zitten de BMS'en aan Home Assistant?\n\n**Wat je nodig hebt:** een USB-RS485-adapter (liefst met FTDI FT232R-chip) of een RS485-netwerkgateway, en een netwerkkabel (CAT5/6) die je aan één kant doorknipt: RJ45 **pin 1 = B (D−)**, **pin 2 = A (D+)**, **pin 3 = GND** (wit-oranje, oranje, wit-groen).\n\n**Waar:** in de vrije **RS485-2**-bus (parallel) op de communicatieprint van het eerste of laatste pakket — niet in CAN / RS485-1, die gaat naar de omvormer. Elk pakket heeft een eigen DIP-adres.",
         "menu_options": {
           "usb": "USB-RS485-stick",
           "network": "RS485-netwerkgateway (wifi/ethernet)"
@@ -55,7 +55,7 @@
       },
       "failed": {
         "title": "Nog geen JK BMS gevonden",
-        "description": "Details: {detail}\n\nControleer: de A/B-draden (omwisselen als er niets binnenkomt), de RS485-poort van de BMS en of geen add-on de poort gebruikt. Vinkje aan = opnieuw zoeken, uit = andere poort kiezen.",
+        "description": "Details: {detail}\n\nControleer: zit de adapter in de **RS485-2**-bus (niet CAN / RS485-1), RJ45 pin 1 = B, 2 = A, 3 = GND (A en B omwisselen als er niets binnenkomt) en of geen add-on de poort gebruikt. Vinkje aan = opnieuw zoeken, uit = andere poort kiezen.",
         "data": {
           "retry": "Opnieuw zoeken op deze poort"
         }

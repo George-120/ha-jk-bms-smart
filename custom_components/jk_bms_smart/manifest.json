@@ -10,7 +10,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/George-120/ha-jk-bms-smart/issues",
   "loggers": ["custom_components.jk_bms_smart"],
-  "requirements": ["pyserial>=3.5"],
+  "requirements": [],
   "usb": [
     {"vid": "0403", "pid": "6001", "description": "*rs485*"},
     {"vid": "0403", "pid": "6015", "description": "*rs485*"},
