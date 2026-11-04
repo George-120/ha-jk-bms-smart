@@ -1,0 +1,351 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Connect your JK BMS units",
+        "description": "How are the BMS units connected to Home Assistant? Most people use a USB-to-RS485 stick on the RS485 port of the BMS (the same port the JK PC software uses).",
+        "menu_options": {
+          "usb": "USB-RS485 stick",
+          "network": "RS485 network gateway (Wi-Fi/Ethernet)"
+        }
+      },
+      "usb": {
+        "title": "Choose the USB stick",
+        "description": "Found {count} serial port(s); the most likely RS485 stick is on top. Not in the list? Choose … and type the path.\n\nThe port must be free: stop any add-on that uses it (e.g. a JK BMS add-on) first.",
+        "data": {
+          "device": "Serial port",
+          "manual_path": "Path (only for …)"
+        }
+      },
+      "usb_confirm": {
+        "title": "RS485 stick found",
+        "description": "A USB-RS485 stick was plugged in ({device}). Search it for JK BMS units?"
+      },
+      "network": {
+        "title": "RS485 network gateway",
+        "description": "For converters such as Elfin EW11 or USR-TCP232 in transparent TCP server mode at 115200 baud, 8N1.",
+        "data": {
+          "host": "IP address",
+          "port": "TCP port"
+        }
+      },
+      "found": {
+        "title": "{count} BMS unit(s) found",
+        "description": "{units}\n\nBus mode: **{mode}** — *listen* means one BMS (address 0) is the master and Home Assistant only listens; *poll* means Home Assistant asks every BMS itself.\n\nGive the bank and each pack a name.",
+        "data": {
+          "title": "Name of the battery bank",
+          "name_0": "Name of the pack on address 0",
+          "name_1": "Name of the pack on address 1",
+          "name_2": "Name of the pack on address 2",
+          "name_3": "Name of the pack on address 3",
+          "name_4": "Name of the pack on address 4",
+          "name_5": "Name of the pack on address 5",
+          "name_6": "Name of the pack on address 6",
+          "name_7": "Name of the pack on address 7",
+          "name_8": "Name of the pack on address 8",
+          "name_9": "Name of the pack on address 9",
+          "name_10": "Name of the pack on address 10",
+          "name_11": "Name of the pack on address 11",
+          "name_12": "Name of the pack on address 12",
+          "name_13": "Name of the pack on address 13",
+          "name_14": "Name of the pack on address 14",
+          "name_15": "Name of the pack on address 15"
+        }
+      },
+      "failed": {
+        "title": "No JK BMS found yet",
+        "description": "Details: {detail}\n\nCheck: A/B wires (swap them if nothing comes in), the RS485 port of the BMS, and that no add-on uses the port. Tick the box to search again, untick to choose another port.",
+        "data": {
+          "retry": "Search again on this port"
+        }
+      }
+    },
+    "progress": {
+      "probe": "Listening on the RS485 bus and looking for JK BMS units. This takes up to 40 seconds."
+    },
+    "error": {
+      "no_port": "Choose a port or type a path.",
+      "port_busy": "The port is in use by another program. Stop the add-on that uses it and try again.",
+      "cannot_open": "The port could not be opened.",
+      "no_bms": "No JK BMS answered on this port.",
+      "unknown": "Unexpected error, see the log."
+    },
+    "abort": {
+      "already_configured": "This port is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "JK BMS Smart",
+        "menu_options": {
+          "dashboard": "Create dashboard",
+          "names": "Names of the packs",
+          "settings": "Update interval",
+          "rescan": "Search for BMS units again"
+        }
+      },
+      "settings": {
+        "title": "Update interval",
+        "description": "Only used when Home Assistant polls the BMS units itself. With a master BMS (address 0) the master sets the pace.",
+        "data": {
+          "poll_interval": "Ask every … seconds",
+          "stale_after": "Show as offline after … seconds without data"
+        }
+      },
+      "names": {
+        "title": "Names of the packs",
+        "description": "Packs on RS485 addresses {units}.",
+        "data": {
+          "name_0": "Name of the pack on address 0",
+          "name_1": "Name of the pack on address 1",
+          "name_2": "Name of the pack on address 2",
+          "name_3": "Name of the pack on address 3",
+          "name_4": "Name of the pack on address 4",
+          "name_5": "Name of the pack on address 5",
+          "name_6": "Name of the pack on address 6",
+          "name_7": "Name of the pack on address 7",
+          "name_8": "Name of the pack on address 8",
+          "name_9": "Name of the pack on address 9",
+          "name_10": "Name of the pack on address 10",
+          "name_11": "Name of the pack on address 11",
+          "name_12": "Name of the pack on address 12",
+          "name_13": "Name of the pack on address 13",
+          "name_14": "Name of the pack on address 14",
+          "name_15": "Name of the pack on address 15"
+        }
+      },
+      "rescan": {
+        "title": "Search again",
+        "description": "Pauses reading for up to 40 seconds and searches the bus. Use this after adding a pack or changing a DIP address. Packs that are not found stay, so a pack that is switched off is not lost."
+      },
+      "rescan_done": {
+        "title": "Search finished",
+        "description": "Found: {found}\nNew: {new}\n{error}\n\nSubmit to save."
+      },
+      "dashboard": {
+        "title": "Create dashboard",
+        "description": "Adds a dashboard \"Home battery\" to the sidebar with the battery bank and every pack with its cells. Your own dashboards are never changed. Press again later to refresh it. {error}"
+      }
+    },
+    "progress": {
+      "probe": "Listening on the RS485 bus and looking for JK BMS units. This takes up to 40 seconds."
+    },
+    "error": {
+      "not_admin": "Only administrators can do this.",
+      "dashboard_failed": "Could not create the dashboard."
+    },
+    "abort": {
+      "dashboard_created": "Dashboard ready: open {url} or find \"Home battery\" in the sidebar."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "soc": {
+        "name": "State of charge"
+      },
+      "voltage": {
+        "name": "Voltage"
+      },
+      "current": {
+        "name": "Current"
+      },
+      "power": {
+        "name": "Power"
+      },
+      "remaining_capacity": {
+        "name": "Remaining capacity"
+      },
+      "full_capacity": {
+        "name": "Full capacity"
+      },
+      "stored_energy": {
+        "name": "Stored energy"
+      },
+      "soh": {
+        "name": "State of health"
+      },
+      "cycles": {
+        "name": "Cycles"
+      },
+      "cycle_capacity": {
+        "name": "Total cycled capacity"
+      },
+      "cell_min": {
+        "name": "Lowest cell voltage"
+      },
+      "cell_max": {
+        "name": "Highest cell voltage"
+      },
+      "cell_avg": {
+        "name": "Average cell voltage"
+      },
+      "cell_delta": {
+        "name": "Cell voltage difference"
+      },
+      "cell_min_number": {
+        "name": "Lowest cell"
+      },
+      "cell_max_number": {
+        "name": "Highest cell"
+      },
+      "mos_temperature": {
+        "name": "MOS temperature"
+      },
+      "balance_current": {
+        "name": "Balance current"
+      },
+      "balance_state": {
+        "name": "Balancer",
+        "state": {
+          "off": "Idle",
+          "charging": "Moving charge (charging)",
+          "discharging": "Moving charge (discharging)"
+        }
+      },
+      "problems": {
+        "name": "Active alarms"
+      },
+      "energy_charged": {
+        "name": "Energy charged"
+      },
+      "energy_discharged": {
+        "name": "Energy discharged"
+      },
+      "runtime": {
+        "name": "Running time"
+      },
+      "heater_current": {
+        "name": "Heater current"
+      },
+      "design_capacity": {
+        "name": "Design capacity"
+      },
+      "cell_ovp": {
+        "name": "Cell overvoltage protection"
+      },
+      "cell_uvp": {
+        "name": "Cell undervoltage protection"
+      },
+      "charge_voltage_setting": {
+        "name": "Charge voltage per cell"
+      },
+      "balance_trigger": {
+        "name": "Balance trigger difference"
+      },
+      "max_charge_current": {
+        "name": "Max charge current"
+      },
+      "max_discharge_current": {
+        "name": "Max discharge current"
+      },
+      "cell_voltage": {
+        "name": "Cell {cell}"
+      },
+      "cell_resistance": {
+        "name": "Cell {cell} wire resistance"
+      },
+      "temperature": {
+        "name": "Temperature {sensor}"
+      },
+      "bank_soc": {
+        "name": "State of charge"
+      },
+      "bank_power": {
+        "name": "Power"
+      },
+      "bank_current": {
+        "name": "Current"
+      },
+      "bank_voltage": {
+        "name": "Voltage"
+      },
+      "bank_stored_energy": {
+        "name": "Stored energy"
+      },
+      "bank_capacity_energy": {
+        "name": "Capacity"
+      },
+      "bank_remaining_capacity": {
+        "name": "Remaining capacity"
+      },
+      "bank_cell_min": {
+        "name": "Lowest cell voltage"
+      },
+      "bank_cell_max": {
+        "name": "Highest cell voltage"
+      },
+      "bank_cell_delta": {
+        "name": "Cell voltage difference"
+      },
+      "bank_temperature_max": {
+        "name": "Highest temperature"
+      },
+      "bank_energy_charged": {
+        "name": "Energy charged"
+      },
+      "bank_energy_discharged": {
+        "name": "Energy discharged"
+      },
+      "bank_units_online": {
+        "name": "Packs online"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Connected"
+      },
+      "charging_enabled": {
+        "name": "Charging allowed"
+      },
+      "discharging_enabled": {
+        "name": "Discharging allowed"
+      },
+      "balancing": {
+        "name": "Balancing"
+      },
+      "heating": {
+        "name": "Heating"
+      },
+      "charger_plugged": {
+        "name": "Charger connected"
+      },
+      "precharge": {
+        "name": "Precharge"
+      },
+      "problem": {
+        "name": "Problem"
+      },
+      "bank_problem": {
+        "name": "Problem"
+      }
+    }
+  },
+  "exceptions": {
+    "port_busy": {
+      "message": "The RS485 port is in use ({error}). Stop the add-on or program that uses it."
+    },
+    "port_error": {
+      "message": "The RS485 port could not be opened: {error}"
+    },
+    "no_bus": {
+      "message": "JK BMS Smart is not set up."
+    },
+    "dashboard_failed": {
+      "message": "Could not create the dashboard: {error}"
+    }
+  },
+  "services": {
+    "create_dashboard": {
+      "name": "Create dashboard",
+      "description": "Adds or refreshes the JK BMS Smart dashboard (administrators only).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Battery bank",
+          "description": "Only needed with more than one bus."
+        }
+      }
+    }
+  }
+}

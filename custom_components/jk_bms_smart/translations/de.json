@@ -1,0 +1,351 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "JK BMS verbinden",
+        "description": "Wie sind die BMS mit Home Assistant verbunden? Meist mit einem USB-RS485-Stick am RS485-Port des BMS (derselbe Port wie die JK-PC-Software).",
+        "menu_options": {
+          "usb": "USB-RS485-Stick",
+          "network": "RS485-Netzwerk-Gateway (WLAN/Ethernet)"
+        }
+      },
+      "usb": {
+        "title": "USB-Stick wählen",
+        "description": "{count} serielle(r) Port(s) gefunden; der wahrscheinlichste RS485-Stick steht oben. Nicht dabei? Wähle … und gib den Pfad ein.\n\nDer Port muss frei sein: stoppe zuerst ein Add-on, das ihn nutzt (z. B. ein JK-BMS-Add-on).",
+        "data": {
+          "device": "Serieller Port",
+          "manual_path": "Pfad (nur bei …)"
+        }
+      },
+      "usb_confirm": {
+        "title": "RS485-Stick gefunden",
+        "description": "Ein USB-RS485-Stick wurde angeschlossen ({device}). Darauf nach JK BMS suchen?"
+      },
+      "network": {
+        "title": "RS485-Netzwerk-Gateway",
+        "description": "Für Wandler wie Elfin EW11 oder USR-TCP232 im transparenten TCP-Server-Modus mit 115200 Baud, 8N1.",
+        "data": {
+          "host": "IP-Adresse",
+          "port": "TCP-Port"
+        }
+      },
+      "found": {
+        "title": "{count} BMS gefunden",
+        "description": "{units}\n\nBusmodus: **{mode}** — *listen* heißt, ein BMS (Adresse 0) ist Master und Home Assistant hört nur mit; *poll* heißt, Home Assistant fragt jedes BMS selbst ab.\n\nGib der Akkubank und jedem Pack einen Namen.",
+        "data": {
+          "title": "Name der Akkubank",
+          "name_0": "Name des Packs auf Adresse 0",
+          "name_1": "Name des Packs auf Adresse 1",
+          "name_2": "Name des Packs auf Adresse 2",
+          "name_3": "Name des Packs auf Adresse 3",
+          "name_4": "Name des Packs auf Adresse 4",
+          "name_5": "Name des Packs auf Adresse 5",
+          "name_6": "Name des Packs auf Adresse 6",
+          "name_7": "Name des Packs auf Adresse 7",
+          "name_8": "Name des Packs auf Adresse 8",
+          "name_9": "Name des Packs auf Adresse 9",
+          "name_10": "Name des Packs auf Adresse 10",
+          "name_11": "Name des Packs auf Adresse 11",
+          "name_12": "Name des Packs auf Adresse 12",
+          "name_13": "Name des Packs auf Adresse 13",
+          "name_14": "Name des Packs auf Adresse 14",
+          "name_15": "Name des Packs auf Adresse 15"
+        }
+      },
+      "failed": {
+        "title": "Noch kein JK BMS gefunden",
+        "description": "Details: {detail}\n\nPrüfe: A/B-Adern (tauschen, wenn nichts ankommt), den RS485-Port des BMS und ob kein Add-on den Port nutzt. Haken = erneut suchen, ohne Haken = anderen Port wählen.",
+        "data": {
+          "retry": "Auf diesem Port erneut suchen"
+        }
+      }
+    },
+    "progress": {
+      "probe": "Höre am RS485-Bus mit und suche JK BMS. Das dauert bis zu 40 Sekunden."
+    },
+    "error": {
+      "no_port": "Wähle einen Port oder gib einen Pfad ein.",
+      "port_busy": "Der Port wird von einem anderen Programm benutzt. Stoppe das Add-on und versuche es erneut.",
+      "cannot_open": "Der Port konnte nicht geöffnet werden.",
+      "no_bms": "Auf diesem Port hat kein JK BMS geantwortet.",
+      "unknown": "Unerwarteter Fehler, siehe Protokoll."
+    },
+    "abort": {
+      "already_configured": "Dieser Port ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "JK BMS Smart",
+        "menu_options": {
+          "dashboard": "Dashboard erstellen",
+          "names": "Namen der Packs",
+          "settings": "Aktualisierung",
+          "rescan": "Erneut nach BMS suchen"
+        }
+      },
+      "settings": {
+        "title": "Aktualisierung",
+        "description": "Nur wenn Home Assistant die BMS selbst abfragt. Mit einem Master-BMS (Adresse 0) gibt dieses den Takt vor.",
+        "data": {
+          "poll_interval": "Alle … Sekunden abfragen",
+          "stale_after": "Nach … Sekunden ohne Daten als offline zeigen"
+        }
+      },
+      "names": {
+        "title": "Namen der Packs",
+        "description": "Packs auf RS485-Adresse {units}.",
+        "data": {
+          "name_0": "Name des Packs auf Adresse 0",
+          "name_1": "Name des Packs auf Adresse 1",
+          "name_2": "Name des Packs auf Adresse 2",
+          "name_3": "Name des Packs auf Adresse 3",
+          "name_4": "Name des Packs auf Adresse 4",
+          "name_5": "Name des Packs auf Adresse 5",
+          "name_6": "Name des Packs auf Adresse 6",
+          "name_7": "Name des Packs auf Adresse 7",
+          "name_8": "Name des Packs auf Adresse 8",
+          "name_9": "Name des Packs auf Adresse 9",
+          "name_10": "Name des Packs auf Adresse 10",
+          "name_11": "Name des Packs auf Adresse 11",
+          "name_12": "Name des Packs auf Adresse 12",
+          "name_13": "Name des Packs auf Adresse 13",
+          "name_14": "Name des Packs auf Adresse 14",
+          "name_15": "Name des Packs auf Adresse 15"
+        }
+      },
+      "rescan": {
+        "title": "Erneut suchen",
+        "description": "Pausiert das Auslesen bis zu 40 Sekunden und durchsucht den Bus. Nach dem Hinzufügen eines Packs oder Ändern einer DIP-Adresse nutzen. Nicht gefundene Packs bleiben erhalten."
+      },
+      "rescan_done": {
+        "title": "Suche beendet",
+        "description": "Gefunden: {found}\nNeu: {new}\n{error}\n\nZum Übernehmen absenden."
+      },
+      "dashboard": {
+        "title": "Dashboard erstellen",
+        "description": "Fügt der Seitenleiste ein Dashboard \"Heimspeicher\" mit der Akkubank und jedem Pack mit seinen Zellen hinzu. Eigene Dashboards werden nie geändert. Später erneut drücken aktualisiert es. {error}"
+      }
+    },
+    "progress": {
+      "probe": "Höre am RS485-Bus mit und suche JK BMS. Das dauert bis zu 40 Sekunden."
+    },
+    "error": {
+      "not_admin": "Nur Administratoren können das.",
+      "dashboard_failed": "Dashboard konnte nicht erstellt werden."
+    },
+    "abort": {
+      "dashboard_created": "Dashboard fertig: öffne {url} oder wähle \"Heimspeicher\" in der Seitenleiste."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "soc": {
+        "name": "Ladezustand"
+      },
+      "voltage": {
+        "name": "Spannung"
+      },
+      "current": {
+        "name": "Strom"
+      },
+      "power": {
+        "name": "Leistung"
+      },
+      "remaining_capacity": {
+        "name": "Restkapazität"
+      },
+      "full_capacity": {
+        "name": "Volle Kapazität"
+      },
+      "stored_energy": {
+        "name": "Gespeicherte Energie"
+      },
+      "soh": {
+        "name": "Gesundheitszustand"
+      },
+      "cycles": {
+        "name": "Zyklen"
+      },
+      "cycle_capacity": {
+        "name": "Gesamte Zykluskapazität"
+      },
+      "cell_min": {
+        "name": "Niedrigste Zellspannung"
+      },
+      "cell_max": {
+        "name": "Höchste Zellspannung"
+      },
+      "cell_avg": {
+        "name": "Mittlere Zellspannung"
+      },
+      "cell_delta": {
+        "name": "Zellspannungsdifferenz"
+      },
+      "cell_min_number": {
+        "name": "Niedrigste Zelle"
+      },
+      "cell_max_number": {
+        "name": "Höchste Zelle"
+      },
+      "mos_temperature": {
+        "name": "MOS-Temperatur"
+      },
+      "balance_current": {
+        "name": "Balancierstrom"
+      },
+      "balance_state": {
+        "name": "Balancer",
+        "state": {
+          "off": "Ruhe",
+          "charging": "Verschiebt Ladung (Laden)",
+          "discharging": "Verschiebt Ladung (Entladen)"
+        }
+      },
+      "problems": {
+        "name": "Aktive Alarme"
+      },
+      "energy_charged": {
+        "name": "Energie geladen"
+      },
+      "energy_discharged": {
+        "name": "Energie entladen"
+      },
+      "runtime": {
+        "name": "Laufzeit"
+      },
+      "heater_current": {
+        "name": "Heizstrom"
+      },
+      "design_capacity": {
+        "name": "Nennkapazität"
+      },
+      "cell_ovp": {
+        "name": "Zellüberspannungsschutz"
+      },
+      "cell_uvp": {
+        "name": "Zellunterspannungsschutz"
+      },
+      "charge_voltage_setting": {
+        "name": "Ladespannung je Zelle"
+      },
+      "balance_trigger": {
+        "name": "Balancieren ab Differenz"
+      },
+      "max_charge_current": {
+        "name": "Max. Ladestrom"
+      },
+      "max_discharge_current": {
+        "name": "Max. Entladestrom"
+      },
+      "cell_voltage": {
+        "name": "Zelle {cell}"
+      },
+      "cell_resistance": {
+        "name": "Zelle {cell} Leitungswiderstand"
+      },
+      "temperature": {
+        "name": "Temperatur {sensor}"
+      },
+      "bank_soc": {
+        "name": "Ladezustand"
+      },
+      "bank_power": {
+        "name": "Leistung"
+      },
+      "bank_current": {
+        "name": "Strom"
+      },
+      "bank_voltage": {
+        "name": "Spannung"
+      },
+      "bank_stored_energy": {
+        "name": "Gespeicherte Energie"
+      },
+      "bank_capacity_energy": {
+        "name": "Kapazität"
+      },
+      "bank_remaining_capacity": {
+        "name": "Restkapazität"
+      },
+      "bank_cell_min": {
+        "name": "Niedrigste Zellspannung"
+      },
+      "bank_cell_max": {
+        "name": "Höchste Zellspannung"
+      },
+      "bank_cell_delta": {
+        "name": "Zellspannungsdifferenz"
+      },
+      "bank_temperature_max": {
+        "name": "Höchste Temperatur"
+      },
+      "bank_energy_charged": {
+        "name": "Energie geladen"
+      },
+      "bank_energy_discharged": {
+        "name": "Energie entladen"
+      },
+      "bank_units_online": {
+        "name": "Packs online"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Verbunden"
+      },
+      "charging_enabled": {
+        "name": "Laden erlaubt"
+      },
+      "discharging_enabled": {
+        "name": "Entladen erlaubt"
+      },
+      "balancing": {
+        "name": "Balancieren"
+      },
+      "heating": {
+        "name": "Heizung"
+      },
+      "charger_plugged": {
+        "name": "Ladegerät angeschlossen"
+      },
+      "precharge": {
+        "name": "Vorladung"
+      },
+      "problem": {
+        "name": "Problem"
+      },
+      "bank_problem": {
+        "name": "Problem"
+      }
+    }
+  },
+  "exceptions": {
+    "port_busy": {
+      "message": "Der RS485-Port ist belegt ({error}). Stoppe das Add-on oder Programm, das ihn nutzt."
+    },
+    "port_error": {
+      "message": "Der RS485-Port konnte nicht geöffnet werden: {error}"
+    },
+    "no_bus": {
+      "message": "JK BMS Smart ist nicht eingerichtet."
+    },
+    "dashboard_failed": {
+      "message": "Dashboard konnte nicht erstellt werden: {error}"
+    }
+  },
+  "services": {
+    "create_dashboard": {
+      "name": "Dashboard erstellen",
+      "description": "Erstellt oder aktualisiert das JK-BMS-Smart-Dashboard (nur Administratoren).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Akkubank",
+          "description": "Nur bei mehr als einem Bus nötig."
+        }
+      }
+    }
+  }
+}

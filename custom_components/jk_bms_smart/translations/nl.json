@@ -1,0 +1,351 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Je JK BMS'en koppelen",
+        "description": "Hoe zitten de BMS'en aan Home Assistant? Meestal is dat een USB-naar-RS485-stick op de RS485-poort van de BMS (dezelfde poort als de JK-pc-software).",
+        "menu_options": {
+          "usb": "USB-RS485-stick",
+          "network": "RS485-netwerkgateway (wifi/ethernet)"
+        }
+      },
+      "usb": {
+        "title": "Kies de USB-stick",
+        "description": "{count} seriële poort(en) gevonden; de meest waarschijnlijke RS485-stick staat bovenaan. Staat hij er niet bij? Kies … en typ het pad.\n\nDe poort moet vrij zijn: zet een add-on die hem gebruikt (bijv. een JK BMS-add-on) eerst uit.",
+        "data": {
+          "device": "Seriële poort",
+          "manual_path": "Pad (alleen bij …)"
+        }
+      },
+      "usb_confirm": {
+        "title": "RS485-stick gevonden",
+        "description": "Er is een USB-RS485-stick aangesloten ({device}). Daarop zoeken naar JK BMS'en?"
+      },
+      "network": {
+        "title": "RS485-netwerkgateway",
+        "description": "Voor omzetters zoals Elfin EW11 of USR-TCP232 in transparante TCP-servermodus op 115200 baud, 8N1.",
+        "data": {
+          "host": "IP-adres",
+          "port": "TCP-poort"
+        }
+      },
+      "found": {
+        "title": "{count} BMS('en) gevonden",
+        "description": "{units}\n\nBusmodus: **{mode}** — *listen* betekent dat één BMS (adres 0) de master is en Home Assistant alleen meeluistert; *poll* betekent dat Home Assistant zelf elke BMS uitvraagt.\n\nGeef de accubank en elk pakket een naam.",
+        "data": {
+          "title": "Naam van de accubank",
+          "name_0": "Naam van het pakket op adres 0",
+          "name_1": "Naam van het pakket op adres 1",
+          "name_2": "Naam van het pakket op adres 2",
+          "name_3": "Naam van het pakket op adres 3",
+          "name_4": "Naam van het pakket op adres 4",
+          "name_5": "Naam van het pakket op adres 5",
+          "name_6": "Naam van het pakket op adres 6",
+          "name_7": "Naam van het pakket op adres 7",
+          "name_8": "Naam van het pakket op adres 8",
+          "name_9": "Naam van het pakket op adres 9",
+          "name_10": "Naam van het pakket op adres 10",
+          "name_11": "Naam van het pakket op adres 11",
+          "name_12": "Naam van het pakket op adres 12",
+          "name_13": "Naam van het pakket op adres 13",
+          "name_14": "Naam van het pakket op adres 14",
+          "name_15": "Naam van het pakket op adres 15"
+        }
+      },
+      "failed": {
+        "title": "Nog geen JK BMS gevonden",
+        "description": "Details: {detail}\n\nControleer: de A/B-draden (omwisselen als er niets binnenkomt), de RS485-poort van de BMS en of geen add-on de poort gebruikt. Vinkje aan = opnieuw zoeken, uit = andere poort kiezen.",
+        "data": {
+          "retry": "Opnieuw zoeken op deze poort"
+        }
+      }
+    },
+    "progress": {
+      "probe": "Luisteren op de RS485-bus en zoeken naar JK BMS'en. Dit duurt tot 40 seconden."
+    },
+    "error": {
+      "no_port": "Kies een poort of typ een pad.",
+      "port_busy": "De poort is in gebruik door een ander programma. Zet de add-on die hem gebruikt uit en probeer opnieuw.",
+      "cannot_open": "De poort kon niet worden geopend.",
+      "no_bms": "Er antwoordde geen JK BMS op deze poort.",
+      "unknown": "Onverwachte fout, zie het logboek."
+    },
+    "abort": {
+      "already_configured": "Deze poort is al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "JK BMS Smart",
+        "menu_options": {
+          "dashboard": "Dashboard aanmaken",
+          "names": "Namen van de pakketten",
+          "settings": "Verversen",
+          "rescan": "Opnieuw zoeken naar BMS'en"
+        }
+      },
+      "settings": {
+        "title": "Verversen",
+        "description": "Alleen als Home Assistant de BMS'en zelf uitvraagt. Met een master-BMS (adres 0) bepaalt die het tempo.",
+        "data": {
+          "poll_interval": "Elke … seconden uitvragen",
+          "stale_after": "Offline tonen na … seconden zonder gegevens"
+        }
+      },
+      "names": {
+        "title": "Namen van de pakketten",
+        "description": "Pakketten op RS485-adres {units}.",
+        "data": {
+          "name_0": "Naam van het pakket op adres 0",
+          "name_1": "Naam van het pakket op adres 1",
+          "name_2": "Naam van het pakket op adres 2",
+          "name_3": "Naam van het pakket op adres 3",
+          "name_4": "Naam van het pakket op adres 4",
+          "name_5": "Naam van het pakket op adres 5",
+          "name_6": "Naam van het pakket op adres 6",
+          "name_7": "Naam van het pakket op adres 7",
+          "name_8": "Naam van het pakket op adres 8",
+          "name_9": "Naam van het pakket op adres 9",
+          "name_10": "Naam van het pakket op adres 10",
+          "name_11": "Naam van het pakket op adres 11",
+          "name_12": "Naam van het pakket op adres 12",
+          "name_13": "Naam van het pakket op adres 13",
+          "name_14": "Naam van het pakket op adres 14",
+          "name_15": "Naam van het pakket op adres 15"
+        }
+      },
+      "rescan": {
+        "title": "Opnieuw zoeken",
+        "description": "Pauzeert het uitlezen tot 40 seconden en doorzoekt de bus. Gebruik dit na het toevoegen van een pakket of het wijzigen van een DIP-adres. Niet gevonden pakketten blijven staan, zodat een uitgeschakeld pakket niet verdwijnt."
+      },
+      "rescan_done": {
+        "title": "Zoeken klaar",
+        "description": "Gevonden: {found}\nNieuw: {new}\n{error}\n\nOpslaan om over te nemen."
+      },
+      "dashboard": {
+        "title": "Dashboard aanmaken",
+        "description": "Voegt een dashboard \"Thuisaccu\" toe aan de zijbalk met de accubank en elk pakket met zijn cellen. Je eigen dashboards worden nooit aangepast. Later nog eens drukken ververst het. {error}"
+      }
+    },
+    "progress": {
+      "probe": "Luisteren op de RS485-bus en zoeken naar JK BMS'en. Dit duurt tot 40 seconden."
+    },
+    "error": {
+      "not_admin": "Alleen beheerders kunnen dit.",
+      "dashboard_failed": "Dashboard aanmaken lukte niet."
+    },
+    "abort": {
+      "dashboard_created": "Dashboard klaar: open {url} of kies \"Thuisaccu\" in de zijbalk."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "soc": {
+        "name": "Laadtoestand"
+      },
+      "voltage": {
+        "name": "Spanning"
+      },
+      "current": {
+        "name": "Stroom"
+      },
+      "power": {
+        "name": "Vermogen"
+      },
+      "remaining_capacity": {
+        "name": "Resterende capaciteit"
+      },
+      "full_capacity": {
+        "name": "Volle capaciteit"
+      },
+      "stored_energy": {
+        "name": "Opgeslagen energie"
+      },
+      "soh": {
+        "name": "Gezondheid"
+      },
+      "cycles": {
+        "name": "Cycli"
+      },
+      "cycle_capacity": {
+        "name": "Totaal gecycleerde capaciteit"
+      },
+      "cell_min": {
+        "name": "Laagste celspanning"
+      },
+      "cell_max": {
+        "name": "Hoogste celspanning"
+      },
+      "cell_avg": {
+        "name": "Gemiddelde celspanning"
+      },
+      "cell_delta": {
+        "name": "Celspanningsverschil"
+      },
+      "cell_min_number": {
+        "name": "Laagste cel"
+      },
+      "cell_max_number": {
+        "name": "Hoogste cel"
+      },
+      "mos_temperature": {
+        "name": "MOS-temperatuur"
+      },
+      "balance_current": {
+        "name": "Balanceerstroom"
+      },
+      "balance_state": {
+        "name": "Balancer",
+        "state": {
+          "off": "Rust",
+          "charging": "Verplaatst lading (laden)",
+          "discharging": "Verplaatst lading (ontladen)"
+        }
+      },
+      "problems": {
+        "name": "Actieve alarmen"
+      },
+      "energy_charged": {
+        "name": "Energie geladen"
+      },
+      "energy_discharged": {
+        "name": "Energie ontladen"
+      },
+      "runtime": {
+        "name": "Draaitijd"
+      },
+      "heater_current": {
+        "name": "Verwarmingsstroom"
+      },
+      "design_capacity": {
+        "name": "Ontwerpcapaciteit"
+      },
+      "cell_ovp": {
+        "name": "Cel-overspanningsbeveiliging"
+      },
+      "cell_uvp": {
+        "name": "Cel-onderspanningsbeveiliging"
+      },
+      "charge_voltage_setting": {
+        "name": "Laadspanning per cel"
+      },
+      "balance_trigger": {
+        "name": "Balanceren vanaf verschil"
+      },
+      "max_charge_current": {
+        "name": "Max. laadstroom"
+      },
+      "max_discharge_current": {
+        "name": "Max. ontlaadstroom"
+      },
+      "cell_voltage": {
+        "name": "Cel {cell}"
+      },
+      "cell_resistance": {
+        "name": "Cel {cell} draadweerstand"
+      },
+      "temperature": {
+        "name": "Temperatuur {sensor}"
+      },
+      "bank_soc": {
+        "name": "Laadtoestand"
+      },
+      "bank_power": {
+        "name": "Vermogen"
+      },
+      "bank_current": {
+        "name": "Stroom"
+      },
+      "bank_voltage": {
+        "name": "Spanning"
+      },
+      "bank_stored_energy": {
+        "name": "Opgeslagen energie"
+      },
+      "bank_capacity_energy": {
+        "name": "Capaciteit"
+      },
+      "bank_remaining_capacity": {
+        "name": "Resterende capaciteit"
+      },
+      "bank_cell_min": {
+        "name": "Laagste celspanning"
+      },
+      "bank_cell_max": {
+        "name": "Hoogste celspanning"
+      },
+      "bank_cell_delta": {
+        "name": "Celspanningsverschil"
+      },
+      "bank_temperature_max": {
+        "name": "Hoogste temperatuur"
+      },
+      "bank_energy_charged": {
+        "name": "Energie geladen"
+      },
+      "bank_energy_discharged": {
+        "name": "Energie ontladen"
+      },
+      "bank_units_online": {
+        "name": "Pakketten online"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Verbonden"
+      },
+      "charging_enabled": {
+        "name": "Laden toegestaan"
+      },
+      "discharging_enabled": {
+        "name": "Ontladen toegestaan"
+      },
+      "balancing": {
+        "name": "Balanceren"
+      },
+      "heating": {
+        "name": "Verwarming"
+      },
+      "charger_plugged": {
+        "name": "Lader aangesloten"
+      },
+      "precharge": {
+        "name": "Voorladen"
+      },
+      "problem": {
+        "name": "Probleem"
+      },
+      "bank_problem": {
+        "name": "Probleem"
+      }
+    }
+  },
+  "exceptions": {
+    "port_busy": {
+      "message": "De RS485-poort is in gebruik ({error}). Zet de add-on of het programma dat hem gebruikt uit."
+    },
+    "port_error": {
+      "message": "De RS485-poort kon niet worden geopend: {error}"
+    },
+    "no_bus": {
+      "message": "JK BMS Smart is niet ingesteld."
+    },
+    "dashboard_failed": {
+      "message": "Dashboard aanmaken lukte niet: {error}"
+    }
+  },
+  "services": {
+    "create_dashboard": {
+      "name": "Dashboard aanmaken",
+      "description": "Maakt of ververst het JK BMS Smart-dashboard (alleen beheerders).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Accubank",
+          "description": "Alleen nodig bij meer dan één bus."
+        }
+      }
+    }
+  }
+}

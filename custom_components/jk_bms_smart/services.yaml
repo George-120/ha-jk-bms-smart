@@ -1,0 +1,7 @@
+create_dashboard:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: jk_bms_smart
