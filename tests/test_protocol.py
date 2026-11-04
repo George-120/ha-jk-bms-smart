@@ -130,3 +130,30 @@ def test_ack_with_wrong_register_does_not_steal_frame():
         got += a.push(tok)
     got += a.flush()
     assert got == []
+
+
+def test_write_frame_layout():
+    # cell OVP 3.65 V on BMS 2: register 0x100C, 2 registers, 4 bytes, value 3650 big-endian
+    f = p.build_write(2, "cell_ovp", 3.65)
+    assert f[:11].hex(" ") == "02 10 10 0c 00 02 04 00 00 0e 42"
+    assert p.crc16(f[:-2]) == struct.unpack_from("<H", f, len(f) - 2)[0]
+    # temperatures are signed tenths of a degree
+    assert p.build_write(1, "charge_ut", -5)[7:11] == struct.pack(">i", -50)
+    assert p.build_write(1, "charge_switch", 0)[2:4] == b"\x10\x70"
+
+
+def test_write_refuses_out_of_range_and_bad_order():
+    import pytest
+
+    with pytest.raises(ValueError):
+        p.build_write(1, "cell_ovp", 5.0)
+    assert p.check_settings({"cell_ovp": 3.65, "cell_ovpr": 3.55}, "cell_ovpr", 3.7) is not None
+    assert p.check_settings({"cell_ovp": 3.65, "cell_ovpr": 3.55}, "cell_ovpr", 3.5) is None
+
+
+def test_reader_sees_write_ack_and_error():
+    r = p.FrameReader()
+    toks = r.feed(p.build_write(2, "cell_ovp", 3.6) + p.with_crc(bytes([2, 0x10, 0x10, 0x0C, 0, 2])) + p.with_crc(bytes([2, 0x90, 3])))
+    kinds = [type(x).__name__ for x in toks]
+    assert kinds == ["ModbusWrite", "ModbusAck", "ModbusError"]
+    assert toks[1].register == 0x100C and toks[2].code == 3

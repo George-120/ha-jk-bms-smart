@@ -21,6 +21,7 @@ from .const import (
     DEFAULT_POLL_INTERVAL,
     DEFAULT_STALE_AFTER,
     DOMAIN,
+    OPT_ALLOW_CHANGES,
     OPT_POLL_INTERVAL,
     OPT_STALE_AFTER,
     SIGNAL_UPDATE,
@@ -52,6 +53,7 @@ class JkBmsManager:
         ]
         self.poll_interval = float(opts.get(OPT_POLL_INTERVAL, DEFAULT_POLL_INTERVAL))
         self.stale_after = float(opts.get(OPT_STALE_AFTER, DEFAULT_STALE_AFTER))
+        self.allow_changes = bool(opts.get(OPT_ALLOW_CHANGES, False))
         self.bus = JkBus(
             hass.loop,
             entry.data[CONF_CONNECTION],
@@ -176,6 +178,19 @@ class JkBmsManager:
             "discharged_kwh": round(energy_out, 3),
         }
 
+    async def async_write(self, address: int, key: str, value: float) -> None:
+        """Change one BMS setting (only when the user switched changes on)."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        from .bus import BusError
+
+        if not self.allow_changes:
+            raise HomeAssistantError("Changing settings is switched off (Configure → Settings)")
+        try:
+            await self.bus.write(address, key, float(value))
+        except (ValueError, BusError) as err:
+            raise HomeAssistantError(str(err)) from err
+
     def card_payload(self, address: int) -> dict[str, Any]:
         """Everything the card needs for one pack (kept out of the recorder)."""
         s = self.bus.states.get(address)
@@ -185,6 +200,7 @@ class JkBmsManager:
             "name": self.unit_name(address),
             "online": self.online(address),
             "mode": self.bus.mode,
+            "allow_changes": self.allow_changes,
             "entities": {k.split(":", 1)[1]: v for k, v in self.own_entities.items() if k.startswith(f"{address}:")},
         }
         if not s:
@@ -229,6 +245,7 @@ class JkBmsManager:
                 "max_charge_current": st.max_charge_current, "max_discharge_current": st.max_discharge_current,
                 "max_balance_current": st.max_balance_current, "design_capacity_ah": st.design_capacity_ah,
                 "charge_switch": st.charge_switch, "discharge_switch": st.discharge_switch, "balance_switch": st.balance_switch,
+                "power_off_voltage": st.power_off_voltage,
                 "charge_ot": st.charge_ot, "discharge_ot": st.discharge_ot, "charge_ut": st.charge_ut, "mos_ot": st.mos_ot,
             }
         if s.info:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 DOMAIN = "jk_bms_smart"
 NAME = "JK BMS Smart"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 CARD_BASE = f"/{DOMAIN}"
 CARD_URL = f"{CARD_BASE}/jk-bms-smart-card.js"
@@ -20,6 +20,7 @@ OPT_POLL_INTERVAL = "poll_interval"
 OPT_STALE_AFTER = "stale_after"
 OPT_LANGUAGE = "language"
 OPT_CELL_RESISTANCE = "cell_resistance"
+OPT_ALLOW_CHANGES = "allow_changes"
 
 DEFAULT_POLL_INTERVAL = 5
 DEFAULT_STALE_AFTER = 60

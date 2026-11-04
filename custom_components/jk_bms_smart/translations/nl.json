@@ -88,10 +88,11 @@
       },
       "settings": {
         "title": "Verversen",
-        "description": "Alleen als Home Assistant de BMS'en zelf uitvraagt. Met een master-BMS (adres 0) bepaalt die het tempo.",
+        "description": "Het interval geldt alleen als Home Assistant de BMS'en zelf uitvraagt; met een master-BMS (adres 0) bepaalt die het tempo.\n\n**Instellingen van de BMS mogen wijzigen** voegt schakelaars toe (laden, ontladen, balanceren) en de beveiligingsinstellingen, en maakt de instellingenkaart bewerkbaar. Wijzigingen gaan direct de BMS in: verander alleen wat je begrijpt. Met een master-BMS stuurt de integratie een wijziging in een stil moment op de bus en controleert dat de BMS hem bevestigt.",
         "data": {
           "poll_interval": "Elke … seconden uitvragen",
-          "stale_after": "Offline tonen na … seconden zonder gegevens"
+          "stale_after": "Offline tonen na … seconden zonder gegevens",
+          "allow_changes": "Instellingen van de BMS mogen wijzigen"
         }
       },
       "names": {
@@ -320,6 +321,76 @@
       "bank_problem": {
         "name": "Probleem"
       }
+    },
+    "switch": {
+      "charge_switch": {
+        "name": "Laden"
+      },
+      "discharge_switch": {
+        "name": "Ontladen"
+      },
+      "balance_switch": {
+        "name": "Balanceren"
+      }
+    },
+    "number": {
+      "set_cell_ovp": {
+        "name": "Cel-overspanningsbeveiliging"
+      },
+      "set_cell_ovpr": {
+        "name": "Cel-overspanning herstel"
+      },
+      "set_cell_uvp": {
+        "name": "Cel-onderspanningsbeveiliging"
+      },
+      "set_cell_uvpr": {
+        "name": "Cel-onderspanning herstel"
+      },
+      "set_charge_voltage": {
+        "name": "Laadspanning per cel"
+      },
+      "set_float_voltage": {
+        "name": "Druppelspanning per cel"
+      },
+      "set_soc100_voltage": {
+        "name": "100 % bij celspanning"
+      },
+      "set_soc0_voltage": {
+        "name": "0 % bij celspanning"
+      },
+      "set_power_off_voltage": {
+        "name": "Uitschakelspanning per cel"
+      },
+      "set_balance_start": {
+        "name": "Balanceren vanaf celspanning"
+      },
+      "set_balance_trigger": {
+        "name": "Balanceren vanaf verschil"
+      },
+      "set_max_balance_current": {
+        "name": "Max. balanceerstroom"
+      },
+      "set_max_charge_current": {
+        "name": "Max. laadstroom"
+      },
+      "set_max_discharge_current": {
+        "name": "Max. ontlaadstroom"
+      },
+      "set_design_capacity_ah": {
+        "name": "Accucapaciteit"
+      },
+      "set_charge_ot": {
+        "name": "Laden te warm"
+      },
+      "set_discharge_ot": {
+        "name": "Ontladen te warm"
+      },
+      "set_charge_ut": {
+        "name": "Laden te koud"
+      },
+      "set_mos_ot": {
+        "name": "MOS te warm"
+      }
     }
   },
   "exceptions": {
@@ -337,6 +408,28 @@
     }
   },
   "services": {
+    "set_setting": {
+      "name": "BMS-instelling wijzigen",
+      "description": "Schrijft één instelling in één JK BMS, of in alle pakketten van de bank (alleen beheerders; 'Instellingen van de BMS mogen wijzigen' moet aan staan).",
+      "fields": {
+        "entity_id": {
+          "name": "Pakket",
+          "description": "Een willekeurige JK BMS Smart-entiteit van het pakket."
+        },
+        "key": {
+          "name": "Instelling",
+          "description": "Welke instelling."
+        },
+        "value": {
+          "name": "Waarde",
+          "description": "Volt, ampère, Ah of °C; schakelaars 1 = aan, 0 = uit."
+        },
+        "all_packs": {
+          "name": "Alle pakketten",
+          "description": "Toepassen op alle pakketten van de bank."
+        }
+      }
+    },
     "create_dashboard": {
       "name": "Dashboard aanmaken",
       "description": "Maakt of ververst het JK BMS Smart-dashboard (alleen beheerders).",

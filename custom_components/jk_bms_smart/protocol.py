@@ -92,6 +92,70 @@ def build_request(address: int, register: int) -> bytes:
     return with_crc(struct.pack(">BBHHBH", address, 0x10, register, 1, 2, 0))
 
 
+@dataclass(frozen=True, slots=True)
+class Writable:
+    """A setting that can be changed. The Modbus register is 0x1000 + the byte offset in the
+    settings frame; the value is a 32-bit big-endian integer (JK Modbus V1.1, PB series)."""
+
+    offset: int
+    scale: float  # raw = value * scale
+    minimum: float
+    maximum: float
+    signed: bool = False
+
+    @property
+    def register(self) -> int:
+        return 0x1000 + self.offset
+
+
+# key -> where it lives. Limits are what the JK app allows for LiFePO4/NMC/LTO; the BMS checks too.
+WRITABLE: dict[str, Writable] = {
+    "charge_switch": Writable(112, 1, 0, 1),
+    "discharge_switch": Writable(116, 1, 0, 1),
+    "balance_switch": Writable(120, 1, 0, 1),
+    "cell_ovp": Writable(12, 1000, 1.2, 4.35),
+    "cell_ovpr": Writable(16, 1000, 1.2, 4.35),
+    "cell_uvp": Writable(4, 1000, 1.2, 4.35),
+    "cell_uvpr": Writable(8, 1000, 1.2, 4.35),
+    "charge_voltage": Writable(32, 1000, 1.2, 4.35),
+    "float_voltage": Writable(36, 1000, 1.2, 4.35),
+    "soc100_voltage": Writable(24, 1000, 1.2, 4.35),
+    "soc0_voltage": Writable(28, 1000, 1.2, 4.35),
+    "power_off_voltage": Writable(40, 1000, 1.2, 4.35),
+    "balance_trigger": Writable(20, 1000, 0.002, 1.0),
+    "balance_start": Writable(132, 1000, 1.2, 4.35),
+    "max_balance_current": Writable(72, 1000, 0.3, 2.0),
+    "max_charge_current": Writable(44, 1000, 1, 300),
+    "max_discharge_current": Writable(56, 1000, 1, 300),
+    "design_capacity_ah": Writable(124, 1000, 1, 2000),
+    "charge_ot": Writable(76, 10, 30, 80, signed=True),
+    "discharge_ot": Writable(84, 10, 30, 80, signed=True),
+    "charge_ut": Writable(92, 10, -30, 20, signed=True),
+    "mos_ot": Writable(100, 10, 50, 100, signed=True),
+}
+
+
+def build_write(address: int, key: str, value: float) -> bytes:
+    """``AA 10 10 xx 00 02 04 <int32 BE> CRC``."""
+    w = WRITABLE[key]
+    if not w.minimum <= value <= w.maximum:
+        raise ValueError(f"{key}={value} outside {w.minimum}..{w.maximum}")
+    raw = round(value * w.scale)
+    payload = struct.pack(">i" if w.signed else ">I", raw)
+    return with_crc(struct.pack(">BBHHB", address, 0x10, w.register, 2, 4) + payload)
+
+
+def check_settings(current: dict[str, Any], key: str, value: float) -> str | None:
+    """Refuse combinations that would trip the pack immediately. Returns a reason or None."""
+    s = {**current, key: value}
+    order = [("cell_uvp", "cell_uvpr"), ("cell_uvpr", "cell_ovpr"), ("cell_ovpr", "cell_ovp"),
+             ("soc0_voltage", "soc100_voltage"), ("charge_voltage", "cell_ovp"), ("power_off_voltage", "cell_uvp")]
+    for low, high in order:
+        if low in s and high in s and s[low] is not None and s[high] is not None and not s[low] < s[high]:
+            return f"{low} must be below {high}"
+    return None
+
+
 def _crc_ok(frame: bytes) -> bool:
     return len(frame) >= 4 and crc16(frame[:-2]) == struct.unpack_from("<H", frame, len(frame) - 2)[0]
 
@@ -123,7 +187,24 @@ class ModbusAck:
     register: int
 
 
-Token = DataFrame | ModbusRequest | ModbusAck
+@dataclass(slots=True)
+class ModbusWrite:
+    """``AA 10 10 xx 00 02 04 <value> CRC`` — someone writes a setting of BMS ``address``."""
+
+    address: int
+    register: int
+    data: bytes
+
+
+@dataclass(slots=True)
+class ModbusError:
+    """``AA 90 <code> CRC`` — the BMS refused a request (3 = value not allowed)."""
+
+    address: int
+    code: int
+
+
+Token = DataFrame | ModbusRequest | ModbusAck | ModbusWrite | ModbusError
 
 
 class FrameReader:
@@ -161,7 +242,9 @@ class FrameReader:
     def _next(self) -> tuple[Token | None, int]:
         buf = self._buf
         n = len(buf)
-        if n < 8:
+        if n < 5:
+            return None, 0
+        if n < 8 and not (buf[1] in (0x90, 0x83) and _crc_ok(bytes(buf[:5]))):
             return None, 0
         if buf[0:4] == HEADER:
             if n < FRAME_LEN:
@@ -173,15 +256,19 @@ class FrameReader:
             self.bad_checksum += 1
             return None, 1
         addr, func = buf[0], buf[1]
-        if addr <= 0xF7 and func == 0x10 and buf[2] == 0x16:
-            # request (11 bytes) or acknowledgement (8 bytes)
-            if n >= 11 and buf[6] == 2 and _crc_ok(bytes(buf[:11])):
-                reg = (buf[2] << 8) | buf[3]
-                return ModbusRequest(addr, reg), 11
+        if addr <= 0xF7 and func in (0x90, 0x83) and _crc_ok(bytes(buf[:5])):
+            return ModbusError(addr, buf[2]), 5
+        if addr <= 0xF7 and func == 0x10 and buf[2] in (0x10, 0x11, 0x14, 0x15, 0x16):
+            reg = (buf[2] << 8) | buf[3]
+            # write request (9 + byte count) or acknowledgement (8 bytes)
+            req_len = 9 + buf[6]
+            if buf[6] in (2, 4) and n >= req_len and _crc_ok(bytes(buf[:req_len])):
+                if buf[2] == 0x16:
+                    return ModbusRequest(addr, reg), req_len
+                return ModbusWrite(addr, reg, bytes(buf[7 : 7 + buf[6]])), req_len
             if _crc_ok(bytes(buf[:8])):
-                reg = (buf[2] << 8) | buf[3]
                 return ModbusAck(addr, reg), 8
-            if n < 11:
+            if n < 13:
                 return None, 0  # wait for the rest of a possible request
         # not the start of anything we know: skip to the next header or byte
         nxt = buf.find(HEADER, 1)

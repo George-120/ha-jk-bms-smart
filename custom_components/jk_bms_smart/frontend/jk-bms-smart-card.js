@@ -1,6 +1,6 @@
 /* JK BMS Smart cards — battery packs with their 16 prismatic cells, served by the jk_bms_smart integration. */
 (() => {
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const BASE = document.currentScript && document.currentScript.src
     ? new URL(".", document.currentScript.src).href
     : "/jk_bms_smart/";
@@ -525,6 +525,155 @@
     getCardSize() { return 7; }
   }
 
+  // ------------------------------------------------------------------ settings card
+
+  const S_GROUPS = [
+    ["switches", ["charge_switch", "discharge_switch", "balance_switch"]],
+    ["voltages", ["cell_ovp", "cell_ovpr", "charge_voltage", "float_voltage", "soc100_voltage", "soc0_voltage", "cell_uvpr", "cell_uvp", "power_off_voltage"]],
+    ["balancer", ["balance_start", "balance_trigger", "max_balance_current"]],
+    ["currents", ["max_charge_current", "max_discharge_current", "design_capacity_ah"]],
+    ["temps", ["charge_ot", "discharge_ot", "charge_ut", "mos_ot"]],
+  ];
+  // unit, decimals, step, min, max (display units; balance_trigger is shown in mV)
+  const S_META = {
+    cell_ovp: ["V", 3, 0.005, 1.2, 4.35], cell_ovpr: ["V", 3, 0.005, 1.2, 4.35], cell_uvp: ["V", 3, 0.005, 1.2, 4.35],
+    cell_uvpr: ["V", 3, 0.005, 1.2, 4.35], charge_voltage: ["V", 3, 0.005, 1.2, 4.35], float_voltage: ["V", 3, 0.005, 1.2, 4.35],
+    soc100_voltage: ["V", 3, 0.005, 1.2, 4.35], soc0_voltage: ["V", 3, 0.005, 1.2, 4.35], power_off_voltage: ["V", 3, 0.005, 1.2, 4.35],
+    balance_start: ["V", 3, 0.005, 1.2, 4.35], balance_trigger: ["mV", 0, 1, 2, 1000], max_balance_current: ["A", 1, 0.1, 0.3, 2],
+    max_charge_current: ["A", 0, 1, 1, 300], max_discharge_current: ["A", 0, 1, 1, 300], design_capacity_ah: ["Ah", 0, 1, 1, 2000],
+    charge_ot: ["°C", 0, 1, 30, 80], discharge_ot: ["°C", 0, 1, 30, 80], charge_ut: ["°C", 0, 1, -30, 20], mos_ot: ["°C", 0, 1, 50, 100],
+  };
+  const S_TEXT = {
+    en: { title: "BMS settings", all: "All packs", groups: { switches: "Switches", voltages: "Cell voltages", balancer: "Balancer", currents: "Current & capacity", temps: "Temperature" },
+      save: "Save", saving: "Saving…", saved: "Saved", differs: "differs per pack", locked: "Changing settings is off. Switch it on under Configure → Update interval → Allow changing BMS settings.",
+      confirm: "Change {name} from {old} to {new} on {where}?", confirmSwitch: "Turn {name} {state} on {where}?", on: "on", off: "off", failed: "Not saved", hint: "Changes go straight into the BMS. With a master BMS they are sent in a quiet moment on the bus and confirmed by the BMS.",
+      names: { charge_switch: "Charging", discharge_switch: "Discharging", balance_switch: "Balancer", charge_voltage: "Charge voltage", float_voltage: "Float voltage", soc100_voltage: "100 % at", soc0_voltage: "0 % at", power_off_voltage: "Power off at", balance_start: "Balance from", balance_trigger: "Balance trigger", max_balance_current: "Max balance current", max_charge_current: "Max charge current", max_discharge_current: "Max discharge current", design_capacity_ah: "Battery capacity", cell_ovp: "Overvoltage protection", cell_ovpr: "Overvoltage recovery", cell_uvp: "Undervoltage protection", cell_uvpr: "Undervoltage recovery", charge_ot: "Charge too hot", discharge_ot: "Discharge too hot", charge_ut: "Charge too cold", mos_ot: "MOS too hot" } },
+    nl: { title: "BMS-instellingen", all: "Alle pakketten", groups: { switches: "Schakelaars", voltages: "Celspanningen", balancer: "Balancer", currents: "Stroom & capaciteit", temps: "Temperatuur" },
+      save: "Opslaan", saving: "Opslaan…", saved: "Opgeslagen", differs: "verschilt per pakket", locked: "Instellingen wijzigen staat uit. Zet het aan via Configureren → Verversen → Instellingen van de BMS mogen wijzigen.",
+      confirm: "{name} wijzigen van {old} naar {new} op {where}?", confirmSwitch: "{name} {state}zetten op {where}?", on: "aan", off: "uit", failed: "Niet opgeslagen", hint: "Wijzigingen gaan direct de BMS in. Met een master-BMS worden ze in een stil moment op de bus verstuurd en door de BMS bevestigd.",
+      names: { charge_switch: "Laden", discharge_switch: "Ontladen", balance_switch: "Balanceren", charge_voltage: "Laadspanning", float_voltage: "Druppelspanning", soc100_voltage: "100 % bij", soc0_voltage: "0 % bij", power_off_voltage: "Uitschakelen bij", balance_start: "Balanceren vanaf", balance_trigger: "Balanceren vanaf verschil", max_balance_current: "Max. balanceerstroom", max_charge_current: "Max. laadstroom", max_discharge_current: "Max. ontlaadstroom", design_capacity_ah: "Accucapaciteit", cell_ovp: "Overspanningsbeveiliging", cell_ovpr: "Overspanning herstel", cell_uvp: "Onderspanningsbeveiliging", cell_uvpr: "Onderspanning herstel", charge_ot: "Laden te warm", discharge_ot: "Ontladen te warm", charge_ut: "Laden te koud", mos_ot: "MOS te warm" } },
+    de: { title: "BMS-Einstellungen", all: "Alle Packs", groups: { switches: "Schalter", voltages: "Zellspannungen", balancer: "Balancer", currents: "Strom & Kapazität", temps: "Temperatur" },
+      save: "Speichern", saving: "Speichert…", saved: "Gespeichert", differs: "unterschiedlich je Pack", locked: "Ändern ist aus. Unter Konfigurieren → Aktualisierung → Ändern der BMS-Einstellungen erlauben einschalten.",
+      confirm: "{name} von {old} auf {new} ändern bei {where}?", confirmSwitch: "{name} {state} bei {where}?", on: "einschalten", off: "ausschalten", failed: "Nicht gespeichert", hint: "Änderungen gehen direkt ins BMS. Mit Master-BMS werden sie in einer ruhigen Busphase gesendet und vom BMS bestätigt.",
+      names: { charge_switch: "Laden", discharge_switch: "Entladen", balance_switch: "Balancer", charge_voltage: "Ladespannung", float_voltage: "Erhaltungsspannung", soc100_voltage: "100 % bei", soc0_voltage: "0 % bei", power_off_voltage: "Abschalten bei", balance_start: "Balancieren ab", balance_trigger: "Balancieren ab Differenz", max_balance_current: "Max. Balancierstrom", max_charge_current: "Max. Ladestrom", max_discharge_current: "Max. Entladestrom", design_capacity_ah: "Akkukapazität", cell_ovp: "Überspannungsschutz", cell_ovpr: "Überspannung Rückkehr", cell_uvp: "Unterspannungsschutz", cell_uvpr: "Unterspannung Rückkehr", charge_ot: "Laden zu warm", discharge_ot: "Entladen zu warm", charge_ut: "Laden zu kalt", mos_ot: "MOS zu warm" } },
+  };
+
+  class JkSettingsCard extends JkBase {
+    static getStubConfig(hass) {
+      const e = Object.keys(hass.states).find((id) => hass.states[id].attributes && hass.states[id].attributes.bank)
+        || Object.keys(hass.states).find((id) => hass.states[id].attributes && hass.states[id].attributes.pack);
+      return { entity: e || "" };
+    }
+
+    get _st() {
+      const pick = (this._config.language && this._config.language !== "auto" ? this._config.language : (this._hass && this._hass.language)) || "en";
+      return S_TEXT[pick.split("-")[0]] || S_TEXT.en;
+    }
+
+    _packs() {
+      const st = this._hass.states[this._config.entity];
+      if (!st) return [];
+      if (st.attributes.pack) return [{ entity: this._config.entity, p: st.attributes.pack }];
+      return ((st.attributes.bank && st.attributes.bank.packs) || [])
+        .map((x) => ({ entity: x.entity, p: x.entity && this._hass.states[x.entity] && this._hass.states[x.entity].attributes.pack }))
+        .filter((x) => x.p);
+    }
+
+    set hass(hass) {
+      this._hass = hass;
+      const packs = this._packs();
+      const sig = JSON.stringify([packs.map((x) => [x.p.settings, x.p.allow_changes, x.p.name]), this._sel, this._busy, this._msg, hass.themes && hass.themes.darkMode, hass.language]);
+      if (sig === this._sig) return;
+      this._sig = sig;
+      this._render();
+    }
+
+    _fmt(key, v) {
+      const [unit, dec] = S_META[key] || ["", 0];
+      if (v == null) return "–";
+      return `${num(key === "balance_trigger" ? v * 1000 : v, dec)} ${unit}`;
+    }
+
+    _render() {
+      if (!this._hass || !this._config) return;
+      const t = this._t; const s = this._st;
+      const packs = this._packs();
+      if (!packs.length) { this._shell(`<div class="empty">${t.noData}</div>`, null, t); return; }
+      if (this._sel == null) this._sel = packs.length > 1 ? "all" : 0;
+      const sel = this._sel === "all" ? packs : [packs[this._sel] || packs[0]];
+      const allow = packs.every((x) => x.p.allow_changes);
+      const ref = sel.find((x) => x.p.settings);
+      const chips = packs.length > 1 ? `<div class="schips">${packs.map((x, i) => `<button class="schip ${this._sel === i ? "sel" : ""}" data-act="spick" data-i="${i}">${esc(x.p.name)}</button>`).join("")}<button class="schip ${this._sel === "all" ? "sel" : ""}" data-act="spick" data-i="all">${s.all}</button></div>` : "";
+      const body = !ref ? `<div class="empty">${t.noSettings}</div>` : S_GROUPS.map(([g, keys]) => `
+        <div class="sgroup"><div class="sgtitle">${s.groups[g]}</div>
+          ${keys.map((key) => {
+            const vals = sel.map((x) => x.p.settings && x.p.settings[key]).filter((v) => v != null);
+            const v = vals[0];
+            const differs = vals.some((x) => x !== v);
+            if (key.endsWith("_switch")) {
+              return `<div class="srow2"><span>${s.names[key]}${differs ? ` <em class="sdiff">${s.differs}</em>` : ""}</span>
+                <button class="tog ${v ? "on" : ""}" data-act="stoggle" data-key="${key}" ${allow && !this._busy ? "" : "disabled"} aria-pressed="${v ? "true" : "false"}"><i></i></button></div>`;
+            }
+            const [unit, dec, step, min, max] = S_META[key];
+            const shown = key === "balance_trigger" ? v * 1000 : v;
+            return `<div class="srow2"><span>${s.names[key]}${differs ? ` <em class="sdiff">${s.differs}</em>` : ""}</span>
+              <span class="sedit"><input type="number" inputmode="decimal" data-key="${key}" value="${shown != null ? Number(shown).toFixed(dec) : ""}" step="${step}" min="${min}" max="${max}" ${allow && !this._busy ? "" : "disabled"}>
+              <small>${unit}</small><button class="sbtn" data-act="ssave" data-key="${key}" ${allow && !this._busy ? "" : "disabled"}>${s.save}</button></span></div>`;
+          }).join("")}
+        </div>`).join("");
+      const msg = this._msg ? `<div class="smsg ${this._msg.ok ? "ok" : "bad"}">${esc(this._msg.text)}</div>` : "";
+      this._shell(`
+        <div class="head"><div class="htitle"><div class="name">${esc(this._config.name || s.title)}</div><div class="sub">${esc(sel.map((x) => x.p.name).join(" · "))}</div></div></div>
+        ${chips}
+        ${allow ? `<div class="shint">${s.hint}</div>` : `<div class="alarm"><ha-icon icon="mdi:lock"></ha-icon><div>${s.locked}</div></div>`}
+        ${msg}${body}`, packs[0].p, t);
+    }
+
+    async _onClick(e) {
+      const el = e.target.closest("[data-act]");
+      if (!el) return;
+      const act = el.dataset.act; const s = this._st;
+      if (act === "spick") { this._sel = el.dataset.i === "all" ? "all" : Number(el.dataset.i); this._msg = null; this._sig = null; this._render(); return; }
+      if (act !== "ssave" && act !== "stoggle") return super._onClick(e);
+      const packs = this._packs();
+      const sel = this._sel === "all" ? packs : [packs[this._sel] || packs[0]];
+      const key = el.dataset.key;
+      const where = sel.map((x) => x.p.name).join(", ");
+      const cur = sel[0].p.settings ? sel[0].p.settings[key] : null;
+      let value;
+      if (act === "stoggle") {
+        value = cur ? 0 : 1;
+        if (!confirm(s.confirmSwitch.replace("{name}", s.names[key]).replace("{state}", value ? s.on : s.off).replace("{where}", where))) return;
+      } else {
+        const input = this.shadowRoot.querySelector(`input[data-key="${key}"]`);
+        let v = parseFloat(String(input.value).replace(",", "."));
+        if (isNaN(v)) return;
+        const [, , , min, max] = S_META[key];
+        if (v < min || v > max) { this._msg = { ok: false, text: `${s.failed}: ${min} – ${max}` }; this._sig = null; this._render(); return; }
+        if (key === "balance_trigger") v = v / 1000;
+        value = v;
+        if (!confirm(s.confirm.replace("{name}", s.names[key]).replace("{old}", this._fmt(key, cur)).replace("{new}", this._fmt(key, v)).replace("{where}", where))) return;
+      }
+      this._busy = true; this._msg = { ok: true, text: s.saving }; this._sig = null; this._render();
+      try {
+        const res = await this._hass.connection.sendMessagePromise({
+          type: "call_service", domain: "jk_bms_smart", service: "set_setting", return_response: true,
+          service_data: { entity_id: sel[0].entity, key, value, all_packs: this._sel === "all" },
+        });
+        const r = (res && res.response) || {};
+        const failed = Object.entries(r.failed || {});
+        this._msg = failed.length
+          ? { ok: false, text: `${s.saved}: ${(r.done || []).join(", ")} · ${s.failed}: ${failed.map(([k, v]) => `${k} (${v})`).join(", ")}` }
+          : { ok: true, text: `${s.saved}: ${s.names[key]} → ${key.endsWith("_switch") ? (value ? s.on : s.off) : this._fmt(key, value)} (${(r.done || []).join(", ")})` };
+      } catch (err) {
+        this._msg = { ok: false, text: `${s.failed}: ${(err && err.message) || err}` };
+      }
+      this._busy = false; this._sig = null; this._render();
+    }
+
+    getCardSize() { return 10; }
+  }
+
   // ------------------------------------------------------------------ editor
 
   class JkEditor extends HTMLElement {
@@ -693,12 +842,34 @@
     .mfoot .fdot.charging { color:#45D69A; } .mfoot .fdot.discharging { color:#F4B740; } .mfoot .fdot.idle { color:#5AA9FF; }
     .mfoot span:last-of-type { margin-left:auto; }
     .warn { color:#FF5C61; --mdc-icon-size:16px; }
+    .schips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+    .schip { background:var(--panel); border:1px solid transparent; color:var(--muted); border-radius:999px; padding:6px 12px; font:inherit; font-size:.82rem; cursor:pointer; }
+    .schip.sel { color:var(--text); border-color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, transparent); }
+    .shint { font-size:.76rem; color:var(--muted); margin:0 0 12px; }
+    .smsg { border-radius:10px; padding:8px 12px; margin:0 0 12px; font-size:.82rem; }
+    .smsg.ok { background:rgba(69,214,154,.12); border:1px solid rgba(69,214,154,.4); }
+    .smsg.bad { background:rgba(255,92,97,.12); border:1px solid rgba(255,92,97,.45); }
+    .sgroup { background:var(--panel); border-radius:14px; padding:6px 12px; margin-bottom:10px; }
+    .sgtitle { font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 0 4px; }
+    .srow2 { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:.86rem; }
+    .sgtitle + .srow2 { border-top:0; }
+    .sdiff { font-style:normal; font-size:.68rem; color:#F4B740; margin-left:4px; }
+    .sedit { display:flex; align-items:center; gap:6px; flex:none; }
+    .sedit input { width:84px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font:inherit; text-align:right; font-variant-numeric:tabular-nums; }
+    .sedit input:focus { outline:none; border-color:var(--accent); }
+    .sedit small { width:24px; color:var(--muted); font-size:.74rem; }
+    .sbtn { background:var(--accent); color:#06121F; border:0; border-radius:8px; padding:6px 10px; font:inherit; font-size:.78rem; font-weight:600; cursor:pointer; }
+    .sbtn:disabled, .sedit input:disabled, .tog:disabled { opacity:.45; cursor:not-allowed; }
+    .tog { width:44px; height:24px; border-radius:12px; border:0; background:#3A4250; position:relative; cursor:pointer; flex:none; }
+    .tog i { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#EDF0F4; transition:left .2s; }
+    .tog.on { background:#45D69A; } .tog.on i { left:23px; }
     @container (max-width: 420px) { .hero, .bankhero { flex-direction:column; align-items:stretch; } .ringwrap { margin:0 auto; } }
   `;
 
   const DEFS = [
     ["jk-bms-smart-pack-card", JkPackCard],
     ["jk-bms-smart-bank-card", JkBankCard],
+    ["jk-bms-smart-settings-card", JkSettingsCard],
     ["jk-bms-smart-card-editor", JkEditor],
   ];
   const register = () => {
@@ -713,6 +884,7 @@
   for (const [type, name, description] of [
     ["jk-bms-smart-pack-card", "JK BMS Smart – Accupakket / Battery pack", "One JK BMS with its prismatic cells, balancer, temperatures and protection settings."],
     ["jk-bms-smart-bank-card", "JK BMS Smart – Accubank / Battery bank", "All packs together: charge, power, lowest/highest cell."],
+    ["jk-bms-smart-settings-card", "JK BMS Smart – Instellingen / Settings", "Change BMS settings per pack or for all packs at once."],
   ]) {
     if (!window.customCards.some((c) => c.type === type)) {
       window.customCards.push({ type, name, description, preview: true, documentationURL: "https://github.com/George-120/ha-jk-bms-smart" });

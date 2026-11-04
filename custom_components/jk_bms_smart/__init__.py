@@ -21,13 +21,14 @@ from .manager import JkBmsManager
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH, Platform.NUMBER]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 type JkBmsConfigEntry = ConfigEntry[JkBmsManager]
 
 SERVICE_CREATE_DASHBOARD = "create_dashboard"
+SERVICE_SET_SETTING = "set_setting"
 ATTR_CONFIG_ENTRY = "config_entry_id"
 
 
@@ -56,6 +57,53 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 translation_domain=DOMAIN, translation_key="dashboard_failed", translation_placeholders={"error": str(err)}
             ) from err
         return {"url_path": url}
+
+    async def _set_setting(call: ServiceCall) -> ServiceResponse:
+        """Used by the settings card: one setting on one pack, or on every pack of the bank."""
+        from homeassistant.helpers import entity_registry as er
+
+        from .protocol import WRITABLE
+
+        reg = er.async_get(hass)
+        ent = reg.async_get(call.data["entity_id"])
+        if ent is None or ent.platform != DOMAIN:
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_bus")
+        entry = hass.config_entries.async_get_entry(ent.config_entry_id)
+        if entry is None or not hasattr(entry, "runtime_data"):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_bus")
+        manager = entry.runtime_data
+        key = call.data["key"]
+        if key not in WRITABLE:
+            raise ServiceValidationError(f"Unknown setting {key}")
+        rest = ent.unique_id[len(entry.entry_id) + 1 :]
+        targets = [u.address for u in manager.units] if call.data.get("all_packs") or rest.startswith("bank_") else [int(rest.split("_", 1)[0])]
+        done, failed = [], {}
+        for address in targets:
+            try:
+                await manager.async_write(address, key, call.data["value"])
+                done.append(manager.unit_name(address))
+            except HomeAssistantError as err:
+                failed[manager.unit_name(address)] = str(err)
+        if failed and not done:
+            raise HomeAssistantError("; ".join(f"{k}: {v}" for k, v in failed.items()))
+        return {"done": done, "failed": failed}
+
+    # Changes battery protection settings, so admins only.
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_SET_SETTING,
+        _set_setting,
+        schema=vol.Schema(
+            {
+                vol.Required("entity_id"): cv.entity_id,
+                vol.Required("key"): cv.string,
+                vol.Required("value"): vol.Coerce(float),
+                vol.Optional("all_packs", default=False): cv.boolean,
+            }
+        ),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
 
     async_register_admin_service(
         hass,

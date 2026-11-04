@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
 import threading
 import time
@@ -35,10 +36,14 @@ from .protocol import (
     DataFrame,
     DeviceInfo,
     FrameReader,
+    WRITABLE,
     ModbusAck,
+    ModbusError,
     ModbusRequest,
     Settings,
     build_request,
+    build_write,
+    check_settings,
     decode_cells,
     decode_info,
     decode_settings,
@@ -285,6 +290,7 @@ class JkBus:
     # ---- receiving
 
     def _on_data(self, data: bytes) -> None:
+        self._last_rx = time.monotonic()
         for token in self.reader.feed(data):
             self._handle_token(token)
         if self._gap_handle:
@@ -307,6 +313,12 @@ class JkBus:
                 self._foreign_requests += 1
         for addr, frame in self.attr.push(token, ours=ours):
             self._accept(addr, frame)
+        if self._write_wait is not None and not self._write_wait.done() and self._write_expect:
+            w_addr, w_reg = self._write_expect
+            if isinstance(token, ModbusAck) and token.address == w_addr and token.register == w_reg:
+                self._write_wait.set_result(None)
+            elif isinstance(token, ModbusError) and token.address == w_addr:
+                self._write_wait.set_result(f"refused (code {token.code})")
         if isinstance(token, ModbusAck) and self._expect and self._answer and not self._answer.done():
             if token.address == self._expect[0]:
                 # the frame was accepted just before; make sure the waiter wakes up
@@ -379,6 +391,69 @@ class JkBus:
             finally:
                 self._expect = None
                 self._answer = None
+
+    # ---- writing settings
+
+    _last_rx = 0.0
+    _write_wait: asyncio.Future | None = None
+    _write_expect: tuple[int, int] | None = None
+
+    async def _wait_quiet(self, quiet_s: float, timeout_s: float) -> bool:
+        """With a master BMS on the bus, only transmit in a silent gap between its messages."""
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            if time.monotonic() - self._last_rx >= quiet_s:
+                return True
+            await asyncio.sleep(0.01)
+        return False
+
+    async def write(self, address: int, key: str, value: float) -> None:
+        """Change one setting. Raises ValueError / BusError with a readable reason."""
+        w = WRITABLE[key]
+        state = self.states.get(address)
+        current = state.settings.as_dict() if state and state.settings else {}
+        if reason := check_settings(current, key, value):
+            raise ValueError(reason)
+        frame = build_write(address, key, value)  # validates the range
+        if not self._transport or not self.connected:
+            raise BusError("RS485 port is not connected")
+        listen = self.mode == MODE_LISTEN or self.master_present
+        if await self._write_locked(address, key, value, w, frame, state, listen):
+            if not listen:
+                # poll mode: read the settings back right away so the card shows the real value
+                await asyncio.sleep(0.05)
+                await self.request(address, REG_SETTINGS)
+            return
+
+    async def _write_locked(self, address, key, value, w, frame, state, listen) -> bool:  # noqa: ANN001
+        async with self._lock:
+            last = "no answer"
+            for _attempt in range(4):
+                if listen and not await self._wait_quiet(0.12, 20):
+                    last = "bus never went quiet"
+                    continue
+                self._write_expect = (address, w.register)
+                self._write_wait = self._loop.create_future()
+                try:
+                    await self._transport.write(frame)
+                    result = await asyncio.wait_for(self._write_wait, 0.6)
+                except TimeoutError:
+                    result = "no answer"
+                finally:
+                    self._write_expect = None
+                    self._write_wait = None
+                if result is None:
+                    _LOGGER.info("BMS %s: %s set to %s", address, key, value)
+                    if state and state.settings:
+                        state.settings = dataclasses.replace(state.settings, **{key: bool(value) if key.endswith("_switch") else value})
+                    if self.on_update:
+                        self.on_update(address, TYPE_SETTINGS)
+                    return True
+                last = result
+                if result.startswith("refused"):
+                    break
+                await asyncio.sleep(0.2)
+        raise BusError(f"BMS {address} did not accept {key}: {last}")
 
     async def scan(self, addresses: range | list[int] = range(0, MAX_ADDRESS + 1)) -> list[int]:
         """Poll mode: find which addresses answer."""

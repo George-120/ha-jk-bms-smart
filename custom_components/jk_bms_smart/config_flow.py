@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_STALE_AFTER,
     DOMAIN,
     NAME,
+    OPT_ALLOW_CHANGES,
     OPT_POLL_INTERVAL,
     OPT_STALE_AFTER,
     RS485_HINTS,
@@ -264,6 +265,7 @@ class JkBmsOptionsFlow(OptionsFlow):
                     vol.Required(OPT_STALE_AFTER, default=opts.get(OPT_STALE_AFTER, DEFAULT_STALE_AFTER)): selector.NumberSelector(
                         selector.NumberSelectorConfig(min=15, max=900, step=5, unit_of_measurement="s", mode=selector.NumberSelectorMode.BOX)
                     ),
+                    vol.Required(OPT_ALLOW_CHANGES, default=opts.get(OPT_ALLOW_CHANGES, False)): selector.BooleanSelector(),
                 }
             ),
         )

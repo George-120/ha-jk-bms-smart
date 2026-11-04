@@ -88,10 +88,11 @@
       },
       "settings": {
         "title": "Update interval",
-        "description": "Only used when Home Assistant polls the BMS units itself. With a master BMS (address 0) the master sets the pace.",
+        "description": "The interval is only used when Home Assistant polls the BMS units itself; with a master BMS (address 0) the master sets the pace.\n\n**Allow changing BMS settings** adds switches (charge, discharge, balance) and the protection settings, and makes the settings card editable. Changes go straight into the BMS: only change what you understand. With a master BMS the integration sends a change in a quiet moment on the bus and checks that the BMS confirms it.",
         "data": {
           "poll_interval": "Ask every … seconds",
-          "stale_after": "Show as offline after … seconds without data"
+          "stale_after": "Show as offline after … seconds without data",
+          "allow_changes": "Allow changing BMS settings"
         }
       },
       "names": {
@@ -320,6 +321,76 @@
       "bank_problem": {
         "name": "Problem"
       }
+    },
+    "switch": {
+      "charge_switch": {
+        "name": "Charging"
+      },
+      "discharge_switch": {
+        "name": "Discharging"
+      },
+      "balance_switch": {
+        "name": "Balancer"
+      }
+    },
+    "number": {
+      "set_cell_ovp": {
+        "name": "Cell overvoltage protection"
+      },
+      "set_cell_ovpr": {
+        "name": "Cell overvoltage recovery"
+      },
+      "set_cell_uvp": {
+        "name": "Cell undervoltage protection"
+      },
+      "set_cell_uvpr": {
+        "name": "Cell undervoltage recovery"
+      },
+      "set_charge_voltage": {
+        "name": "Charge voltage per cell"
+      },
+      "set_float_voltage": {
+        "name": "Float voltage per cell"
+      },
+      "set_soc100_voltage": {
+        "name": "100 % at cell voltage"
+      },
+      "set_soc0_voltage": {
+        "name": "0 % at cell voltage"
+      },
+      "set_power_off_voltage": {
+        "name": "Power-off cell voltage"
+      },
+      "set_balance_start": {
+        "name": "Balance from cell voltage"
+      },
+      "set_balance_trigger": {
+        "name": "Balance trigger difference"
+      },
+      "set_max_balance_current": {
+        "name": "Max balance current"
+      },
+      "set_max_charge_current": {
+        "name": "Max charge current"
+      },
+      "set_max_discharge_current": {
+        "name": "Max discharge current"
+      },
+      "set_design_capacity_ah": {
+        "name": "Battery capacity"
+      },
+      "set_charge_ot": {
+        "name": "Charge over-temperature"
+      },
+      "set_discharge_ot": {
+        "name": "Discharge over-temperature"
+      },
+      "set_charge_ut": {
+        "name": "Charge under-temperature"
+      },
+      "set_mos_ot": {
+        "name": "MOS over-temperature"
+      }
     }
   },
   "exceptions": {
@@ -337,6 +408,28 @@
     }
   },
   "services": {
+    "set_setting": {
+      "name": "Change BMS setting",
+      "description": "Writes one setting into one JK BMS, or into every pack of the bank (administrators only; 'Allow changing BMS settings' must be on).",
+      "fields": {
+        "entity_id": {
+          "name": "Pack",
+          "description": "Any JK BMS Smart entity of the pack."
+        },
+        "key": {
+          "name": "Setting",
+          "description": "Which setting."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Volts, amps, Ah or °C; switches 1 = on, 0 = off."
+        },
+        "all_packs": {
+          "name": "All packs",
+          "description": "Apply to every pack of the bank."
+        }
+      }
+    },
     "create_dashboard": {
       "name": "Create dashboard",
       "description": "Adds or refreshes the JK BMS Smart dashboard (administrators only).",

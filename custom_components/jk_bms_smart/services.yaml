@@ -5,3 +5,50 @@ create_dashboard:
       selector:
         config_entry:
           integration: jk_bms_smart
+set_setting:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: jk_bms_smart
+    key:
+      required: true
+      selector:
+        select:
+          options:
+            - charge_switch
+            - discharge_switch
+            - balance_switch
+            - cell_ovp
+            - cell_ovpr
+            - cell_uvp
+            - cell_uvpr
+            - charge_voltage
+            - float_voltage
+            - soc100_voltage
+            - soc0_voltage
+            - power_off_voltage
+            - balance_trigger
+            - balance_start
+            - max_balance_current
+            - max_charge_current
+            - max_discharge_current
+            - design_capacity_ah
+            - charge_ot
+            - discharge_ot
+            - charge_ut
+            - mos_ot
+    value:
+      required: true
+      selector:
+        number:
+          min: -30
+          max: 2000
+          step: any
+          mode: box
+    all_packs:
+      required: false
+      default: false
+      selector:
+        boolean:

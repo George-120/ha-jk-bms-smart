@@ -103,3 +103,47 @@ def test_poll_mode_scans_and_reads():
     assert result["mode"] == busmod.MODE_POLL
     assert [u["address"] for u in result["units"]] == [1, 2, 3]
     assert states == {1: 3.1, 2: 3.2, 3: 3.3}
+
+
+async def _master_and_slave_server(reader, writer):
+    """Master at 0 keeps polling; BMS 1 answers our write with an ack in the quiet gaps."""
+    async def master():
+        while True:
+            writer.write(cells_frame([3300] * 16) + ack(0))
+            writer.write(p.build_request(1, p.REG_CELLS) + cells_frame([3200] * 16) + ack(1))
+            await writer.drain()
+            await asyncio.sleep(0.4)
+
+    task = asyncio.get_running_loop().create_task(master())
+    buf = b""
+    try:
+        while True:
+            data = await reader.read(64)
+            if not data:
+                return
+            buf += data
+            if len(buf) >= 13 and buf[1] == 0x10 and buf[2] == 0x10:
+                writer.write(p.with_crc(buf[:6]))
+                await writer.drain()
+                buf = b""
+    except (ConnectionError, asyncio.CancelledError):
+        pass
+    finally:
+        task.cancel()
+
+
+def test_write_in_listen_mode_waits_for_gap_and_gets_ack():
+    async def main():
+        server = await asyncio.start_server(_master_and_slave_server, "127.0.0.1", 0)
+        port = server.sockets[0].getsockname()[1]
+        loop = asyncio.get_running_loop()
+        bus = busmod.JkBus(loop, {"type": "tcp", "host": "127.0.0.1", "port": port})
+        await bus.open()
+        await bus.detect_mode(1.5)
+        await bus.write(1, "cell_ovp", 3.6)
+        mode = bus.mode
+        await bus.close()
+        server.close()
+        return mode
+
+    assert _run(main()) == busmod.MODE_LISTEN

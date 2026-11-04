@@ -113,13 +113,14 @@ OPTIONS = {
         "settings": {
             "title": t("Update interval", "Verversen", "Aktualisierung"),
             "description": t(
-                "Only used when Home Assistant polls the BMS units itself. With a master BMS (address 0) the master sets the pace.",
-                "Alleen als Home Assistant de BMS'en zelf uitvraagt. Met een master-BMS (adres 0) bepaalt die het tempo.",
-                "Nur wenn Home Assistant die BMS selbst abfragt. Mit einem Master-BMS (Adresse 0) gibt dieses den Takt vor.",
+                "The interval is only used when Home Assistant polls the BMS units itself; with a master BMS (address 0) the master sets the pace.\n\n**Allow changing BMS settings** adds switches (charge, discharge, balance) and the protection settings, and makes the settings card editable. Changes go straight into the BMS: only change what you understand. With a master BMS the integration sends a change in a quiet moment on the bus and checks that the BMS confirms it.",
+                "Het interval geldt alleen als Home Assistant de BMS'en zelf uitvraagt; met een master-BMS (adres 0) bepaalt die het tempo.\n\n**Instellingen van de BMS mogen wijzigen** voegt schakelaars toe (laden, ontladen, balanceren) en de beveiligingsinstellingen, en maakt de instellingenkaart bewerkbaar. Wijzigingen gaan direct de BMS in: verander alleen wat je begrijpt. Met een master-BMS stuurt de integratie een wijziging in een stil moment op de bus en controleert dat de BMS hem bevestigt.",
+                "Das Intervall gilt nur, wenn Home Assistant die BMS selbst abfragt; mit einem Master-BMS (Adresse 0) gibt dieses den Takt vor.\n\n**Ändern der BMS-Einstellungen erlauben** fügt Schalter (Laden, Entladen, Balancieren) und die Schutzeinstellungen hinzu und macht die Einstellungskarte bearbeitbar. Änderungen gehen direkt ins BMS: nur ändern, was du verstehst. Mit Master-BMS sendet die Integration eine Änderung in einer ruhigen Busphase und prüft die Bestätigung.",
             ),
             "data": {
                 "poll_interval": t("Ask every … seconds", "Elke … seconden uitvragen", "Alle … Sekunden abfragen"),
                 "stale_after": t("Show as offline after … seconds without data", "Offline tonen na … seconden zonder gegevens", "Nach … Sekunden ohne Daten als offline zeigen"),
+                "allow_changes": t("Allow changing BMS settings", "Instellingen van de BMS mogen wijzigen", "Ändern der BMS-Einstellungen erlauben"),
             },
         },
         "names": {
@@ -231,6 +232,32 @@ BINARY = {
     "problem": t("Problem", "Probleem", "Problem"),
     "bank_problem": t("Problem", "Probleem", "Problem"),
 }
+SWITCHES = {
+    "charge_switch": t("Charging", "Laden", "Laden"),
+    "discharge_switch": t("Discharging", "Ontladen", "Entladen"),
+    "balance_switch": t("Balancer", "Balanceren", "Balancer"),
+}
+NUMBERS = {
+    "set_cell_ovp": t("Cell overvoltage protection", "Cel-overspanningsbeveiliging", "Zellüberspannungsschutz"),
+    "set_cell_ovpr": t("Cell overvoltage recovery", "Cel-overspanning herstel", "Zellüberspannung Rückkehr"),
+    "set_cell_uvp": t("Cell undervoltage protection", "Cel-onderspanningsbeveiliging", "Zellunterspannungsschutz"),
+    "set_cell_uvpr": t("Cell undervoltage recovery", "Cel-onderspanning herstel", "Zellunterspannung Rückkehr"),
+    "set_charge_voltage": t("Charge voltage per cell", "Laadspanning per cel", "Ladespannung je Zelle"),
+    "set_float_voltage": t("Float voltage per cell", "Druppelspanning per cel", "Erhaltungsspannung je Zelle"),
+    "set_soc100_voltage": t("100 % at cell voltage", "100 % bij celspanning", "100 % bei Zellspannung"),
+    "set_soc0_voltage": t("0 % at cell voltage", "0 % bij celspanning", "0 % bei Zellspannung"),
+    "set_power_off_voltage": t("Power-off cell voltage", "Uitschakelspanning per cel", "Abschaltspannung je Zelle"),
+    "set_balance_start": t("Balance from cell voltage", "Balanceren vanaf celspanning", "Balancieren ab Zellspannung"),
+    "set_balance_trigger": t("Balance trigger difference", "Balanceren vanaf verschil", "Balancieren ab Differenz"),
+    "set_max_balance_current": t("Max balance current", "Max. balanceerstroom", "Max. Balancierstrom"),
+    "set_max_charge_current": t("Max charge current", "Max. laadstroom", "Max. Ladestrom"),
+    "set_max_discharge_current": t("Max discharge current", "Max. ontlaadstroom", "Max. Entladestrom"),
+    "set_design_capacity_ah": t("Battery capacity", "Accucapaciteit", "Akkukapazität"),
+    "set_charge_ot": t("Charge over-temperature", "Laden te warm", "Laden zu warm"),
+    "set_discharge_ot": t("Discharge over-temperature", "Ontladen te warm", "Entladen zu warm"),
+    "set_charge_ut": t("Charge under-temperature", "Laden te koud", "Laden zu kalt"),
+    "set_mos_ot": t("MOS over-temperature", "MOS te warm", "MOS zu warm"),
+}
 EXCEPTIONS = {
     "port_busy": t(
         "The RS485 port is in use ({error}). Stop the add-on or program that uses it.",
@@ -242,6 +269,20 @@ EXCEPTIONS = {
     "dashboard_failed": t("Could not create the dashboard: {error}", "Dashboard aanmaken lukte niet: {error}", "Dashboard konnte nicht erstellt werden: {error}"),
 }
 SERVICES = {
+    "set_setting": {
+        "name": t("Change BMS setting", "BMS-instelling wijzigen", "BMS-Einstellung ändern"),
+        "description": t(
+            "Writes one setting into one JK BMS, or into every pack of the bank (administrators only; 'Allow changing BMS settings' must be on).",
+            "Schrijft één instelling in één JK BMS, of in alle pakketten van de bank (alleen beheerders; 'Instellingen van de BMS mogen wijzigen' moet aan staan).",
+            "Schreibt eine Einstellung in ein JK BMS oder in alle Packs der Bank (nur Administratoren; 'Ändern der BMS-Einstellungen erlauben' muss an sein).",
+        ),
+        "fields": {
+            "entity_id": {"name": t("Pack", "Pakket", "Pack"), "description": t("Any JK BMS Smart entity of the pack.", "Een willekeurige JK BMS Smart-entiteit van het pakket.", "Eine beliebige JK-BMS-Smart-Entität des Packs.")},
+            "key": {"name": t("Setting", "Instelling", "Einstellung"), "description": t("Which setting.", "Welke instelling.", "Welche Einstellung.")},
+            "value": {"name": t("Value", "Waarde", "Wert"), "description": t("Volts, amps, Ah or °C; switches 1 = on, 0 = off.", "Volt, ampère, Ah of °C; schakelaars 1 = aan, 0 = uit.", "Volt, Ampere, Ah oder °C; Schalter 1 = an, 0 = aus.")},
+            "all_packs": {"name": t("All packs", "Alle pakketten", "Alle Packs"), "description": t("Apply to every pack of the bank.", "Toepassen op alle pakketten van de bank.", "Auf alle Packs der Bank anwenden.")},
+        },
+    },
     "create_dashboard": {
         "name": t("Create dashboard", "Dashboard aanmaken", "Dashboard erstellen"),
         "description": t(
@@ -281,7 +322,9 @@ def build(lang: str) -> dict:
     out = {
         "config": CONFIG,
         "options": OPTIONS,
-        "entity": {"sensor": sensor, "binary_sensor": {k: {"name": v} for k, v in BINARY.items()}},
+        "entity": {"sensor": sensor, "binary_sensor": {k: {"name": v} for k, v in BINARY.items()},
+                   "switch": {k: {"name": v} for k, v in SWITCHES.items()},
+                   "number": {k: {"name": v} for k, v in NUMBERS.items()}},
         "exceptions": {k: {"message": v} for k, v in EXCEPTIONS.items()},
         "services": SERVICES,
     }
