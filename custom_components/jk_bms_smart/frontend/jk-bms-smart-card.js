@@ -1,6 +1,6 @@
 /* JK BMS Smart cards — battery packs with their 16 prismatic cells, served by the jk_bms_smart integration. */
 (() => {
-  const VERSION = "1.1.1";
+  const VERSION = "1.1.2";
   const BASE = document.currentScript && document.currentScript.src
     ? new URL(".", document.currentScript.src).href
     : "/jk_bms_smart/";
@@ -197,6 +197,8 @@
         this._html = null;
       }
       if (card.className !== cls) card.className = cls;
+      const lang = ((this._hass && this._hass.language) || "en").split("-")[0];
+      if (card.getAttribute("lang") !== lang) card.setAttribute("lang", lang);
       if (html === this._html) return;
       this._html = html;
       const scrollers = this._scrollers();
@@ -908,16 +910,18 @@
     .smsg.bad { background:rgba(255,92,97,.12); border:1px solid rgba(255,92,97,.45); }
     .sgroup { background:var(--panel); border-radius:14px; padding:6px 12px; margin-bottom:10px; }
     .sgtitle { font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 0 4px; }
-    .srow2 { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:.86rem; }
+    .srow2 { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; column-gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:.86rem; }
+    .srow2 > span:first-child { min-width:0; overflow-wrap:anywhere; hyphens:auto; -webkit-hyphens:auto; line-height:1.3; }
     .sgtitle + .srow2 { border-top:0; }
     .sdiff { font-style:normal; font-size:.68rem; color:#F4B740; margin-left:4px; }
-    .sedit { display:flex; align-items:center; gap:6px; flex:none; }
-    .sedit input { width:84px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font:inherit; text-align:right; font-variant-numeric:tabular-nums; }
+    .sedit { display:grid; grid-template-columns:84px 28px 72px; align-items:center; gap:6px; justify-self:end; }
+    .sedit input { width:100%; box-sizing:border-box; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font:inherit; text-align:right; font-variant-numeric:tabular-nums; }
     .sedit input:focus { outline:none; border-color:var(--accent); }
-    .sedit small { width:24px; color:var(--muted); font-size:.74rem; }
-    .sbtn { background:var(--accent); color:#06121F; border:0; border-radius:8px; padding:6px 10px; font:inherit; font-size:.78rem; font-weight:600; cursor:pointer; }
+    .sedit small { color:var(--muted); font-size:.74rem; }
+    .sbtn { width:100%; background:var(--accent); color:#06121F; border:0; border-radius:8px; padding:6px 4px; font:inherit; font-size:.78rem; font-weight:600; cursor:pointer; }
     .sbtn:disabled, .sedit input:disabled, .tog:disabled { opacity:.45; cursor:not-allowed; }
-    .tog { width:44px; height:24px; border-radius:12px; border:0; background:#3A4250; position:relative; cursor:pointer; flex:none; }
+    .tog { width:44px; height:24px; border-radius:12px; border:0; background:#3A4250; position:relative; cursor:pointer; justify-self:end; }
+    @container (max-width: 380px) { .sedit { grid-template-columns:72px 24px 64px; gap:4px; } .srow2 { font-size:.8rem; } }
     .tog i { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#EDF0F4; transition:left .2s; }
     .tog.on { background:#45D69A; } .tog.on i { left:23px; }
     @container (max-width: 420px) { .hero, .bankhero { flex-direction:column; align-items:stretch; } .ringwrap { margin:0 auto; } }
