@@ -1,6 +1,6 @@
 /* JK BMS Smart cards — battery packs with their 16 prismatic cells, served by the jk_bms_smart integration. */
 (() => {
-  const VERSION = "1.1.0";
+  const VERSION = "1.1.1";
   const BASE = document.currentScript && document.currentScript.src
     ? new URL(".", document.currentScript.src).href
     : "/jk_bms_smart/";
@@ -134,10 +134,22 @@
     set hass(hass) {
       this._hass = hass;
       const st = this._config && hass.states[this._config.entity];
-      const sig = JSON.stringify([st && st.last_updated, st && st.attributes, this._tab, hass.themes && hass.themes.darkMode, hass.language]);
+      // keep the last good data while an update is in flight: a short "unavailable" must not
+      // collapse the card (that is what makes a phone jump to the top)
+      if (st && st.attributes && (st.attributes.pack || st.attributes.bank)) this._lastAttrs = st.attributes;
+      const sig = JSON.stringify([st && st.attributes, this._tab, hass.themes && hass.themes.darkMode, hass.language]);
       if (sig === this._sig) return;
       this._sig = sig;
-      this._render();
+      // at most one redraw per second
+      if (this._pending) return;
+      const wait = Math.max(0, 1000 - (Date.now() - (this._drawn || 0)));
+      this._pending = setTimeout(() => { this._pending = null; this._drawn = Date.now(); this._render(); }, wait);
+    }
+
+    _stateAttrs(entity) {
+      const st = this._hass.states[entity];
+      if (st && st.attributes && (st.attributes.pack || st.attributes.bank)) return st.attributes;
+      return entity === this._config.entity ? this._lastAttrs : null;
     }
 
     get _t() {
@@ -169,8 +181,48 @@
       }
     }
 
+    // Update the card in place instead of rebuilding the whole shadow DOM on every state change.
+    // On phones a full rebuild briefly removes the card's content; the page then shrinks for a
+    // moment and the browser/app jumps back to the top. So: style and <ha-card> are created once,
+    // nothing happens when the output did not change, the height is held during the swap and the
+    // scroll position is put back if anything moved it anyway.
     _shell(inner, data, t) {
-      this.shadowRoot.innerHTML = `<style>${CSS}</style><ha-card class="${this._themeClass()}">${this._staleBar(data, t)}${inner}</ha-card>`;
+      const html = `${this._staleBar(data, t)}${inner}`;
+      const cls = this._themeClass();
+      const root = this.shadowRoot;
+      let card = this._card;
+      if (!card || !card.isConnected) {
+        root.innerHTML = `<style>${CSS}</style><ha-card></ha-card>`;
+        card = this._card = root.querySelector("ha-card");
+        this._html = null;
+      }
+      if (card.className !== cls) card.className = cls;
+      if (html === this._html) return;
+      this._html = html;
+      const scrollers = this._scrollers();
+      const positions = scrollers.map((el) => el.scrollTop);
+      const height = card.offsetHeight;
+      if (height) card.style.minHeight = `${height}px`;
+      card.innerHTML = html;
+      scrollers.forEach((el, i) => { if (Math.abs(el.scrollTop - positions[i]) > 1) el.scrollTop = positions[i]; });
+      requestAnimationFrame(() => {
+        card.style.minHeight = "";
+        scrollers.forEach((el, i) => { if (positions[i] > 0 && el.scrollTop < positions[i] - 40) el.scrollTop = positions[i]; });
+      });
+    }
+
+    // The page itself plus every scrolled container the card sits in (HA uses different
+    // scroll containers on desktop, phone browsers and the companion app).
+    _scrollers() {
+      const out = [];
+      const se = document.scrollingElement;
+      if (se) out.push(se);
+      let n = this;
+      for (let i = 0; i < 40 && n; i++) {
+        n = n.parentNode || (n instanceof ShadowRoot ? n.host : null) || (n.host || null);
+        if (n && n.nodeType === 1 && n.scrollHeight > n.clientHeight + 1 && n.scrollTop > 0 && !out.includes(n)) out.push(n);
+      }
+      return out;
     }
 
     getCardSize() { return 8; }
@@ -187,8 +239,8 @@
     _render() {
       if (!this._hass || !this._config) return;
       const t = this._t;
-      const st = this._hass.states[this._config.entity];
-      const p = st && st.attributes.pack;
+      const a = this._stateAttrs(this._config.entity);
+      const p = a && a.pack;
       if (!p) {
         this._shell(`<div class="empty">${esc(this._config.entity || "")} — ${t.noData}</div>`, null, t);
         return;
@@ -462,10 +514,15 @@
     _render() {
       if (!this._hass || !this._config) return;
       const t = this._t;
-      const st = this._hass.states[this._config.entity];
-      const b = st && st.attributes.bank;
+      const a = this._stateAttrs(this._config.entity);
+      const b = a && a.bank;
       if (!b) { this._shell(`<div class="empty">${t.noData}</div>`, null, t); return; }
-      const packs = (b.packs || []).map((x) => ({ ...x, p: x.entity && this._hass.states[x.entity] && this._hass.states[x.entity].attributes.pack }));
+      this._packCache = this._packCache || {};
+      const packs = (b.packs || []).map((x) => {
+        const live = x.entity && this._hass.states[x.entity] && this._hass.states[x.entity].attributes.pack;
+        if (live) this._packCache[x.entity] = live;
+        return { ...x, p: live || this._packCache[x.entity] };
+      });
       const flow = b.current > 0.5 ? "charging" : b.current < -0.5 ? "discharging" : "idle";
       const col = flow === "charging" ? C.green : flow === "discharging" ? C.amber : C.blue;
       const deltaMv = b.cell_delta != null ? Math.round(b.cell_delta * 1000) : null;
