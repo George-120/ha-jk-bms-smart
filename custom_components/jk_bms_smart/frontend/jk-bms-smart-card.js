@@ -1,6 +1,6 @@
 /* JK BMS Smart cards — battery packs with their 16 prismatic cells, served by the jk_bms_smart integration. */
 (() => {
-  const VERSION = "1.2.1";
+  const VERSION = "1.2.2";
   const BASE = document.currentScript && document.currentScript.src
     ? new URL(".", document.currentScript.src).href
     : "/jk_bms_smart/";
@@ -15,7 +15,7 @@
       mos: "MOS", temp: "Temp", chg: "CHG", dsg: "DSG", bal: "BAL", heat: "Heat", on: "on", off: "off",
       balanceStates: { off: "idle", charging: "moving charge", discharging: "moving charge" },
       resistance: "Wire resistance", cell: "Cell", problemsTitle: "Needs attention", allGood: "No alarms", infoOnly: "Notice",
-      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serial", made: "Made", address: "RS485 address", runtime: "Running",
+      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serial", made: "Made", noInfo: "Model and firmware are being read…", noInfoMaster: "Master BMS (address 0): it does not report its model and firmware over RS485-2.", address: "RS485 address", runtime: "Running",
       days: "days", mode: "Bus mode", listen: "listening (BMS is master)", poll: "polling", energyIn: "Charged", energyOut: "Discharged",
       settings: { cell_ovp: "Cell overvoltage", cell_ovpr: "… recovers at", cell_uvp: "Cell undervoltage", cell_uvpr: "… recovers at",
         charge_voltage: "Charge voltage (per cell)", float_voltage: "Float voltage (per cell)", soc100_voltage: "100 % at", soc0_voltage: "0 % at",
@@ -45,7 +45,7 @@
       mos: "MOS", temp: "Temp", chg: "LAD", dsg: "ONT", bal: "BAL", heat: "Verw.", on: "aan", off: "uit",
       balanceStates: { off: "rust", charging: "verplaatst lading", discharging: "verplaatst lading" },
       resistance: "Draadweerstand", cell: "Cel", problemsTitle: "Let op", allGood: "Geen alarmen", infoOnly: "Melding",
-      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serienummer", made: "Productie", address: "RS485-adres", runtime: "Draaitijd",
+      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serienummer", made: "Productie", noInfo: "Model en firmware worden opgehaald…", noInfoMaster: "Master-BMS (adres 0): die geeft zijn model en firmware niet door via RS485-2.", address: "RS485-adres", runtime: "Draaitijd",
       days: "dagen", mode: "Busmodus", listen: "luisteren (BMS is master)", poll: "uitvragen", energyIn: "Geladen", energyOut: "Ontladen",
       settings: { cell_ovp: "Cel overspanning", cell_ovpr: "… herstelt bij", cell_uvp: "Cel onderspanning", cell_uvpr: "… herstelt bij",
         charge_voltage: "Laadspanning (per cel)", float_voltage: "Druppelspanning (per cel)", soc100_voltage: "100 % bij", soc0_voltage: "0 % bij",
@@ -75,7 +75,7 @@
       mos: "MOS", temp: "Temp", chg: "LAD", dsg: "ENT", bal: "BAL", heat: "Heiz.", on: "an", off: "aus",
       balanceStates: { off: "Ruhe", charging: "verschiebt Ladung", discharging: "verschiebt Ladung" },
       resistance: "Leitungswiderstand", cell: "Zelle", problemsTitle: "Achtung", allGood: "Keine Alarme", infoOnly: "Hinweis",
-      model: "Modell", firmware: "Firmware", hardware: "Hardware", serial: "Seriennummer", made: "Produktion", address: "RS485-Adresse", runtime: "Laufzeit",
+      model: "Modell", firmware: "Firmware", hardware: "Hardware", serial: "Seriennummer", made: "Produktion", noInfo: "Modell und Firmware werden gelesen…", noInfoMaster: "Master-BMS (Adresse 0): meldet Modell und Firmware nicht über RS485-2.", address: "RS485-Adresse", runtime: "Laufzeit",
       days: "Tage", mode: "Busmodus", listen: "mithören (BMS ist Master)", poll: "abfragen", energyIn: "Geladen", energyOut: "Entladen",
       settings: { cell_ovp: "Zellüberspannung", cell_ovpr: "… zurück bei", cell_uvp: "Zellunterspannung", cell_uvpr: "… zurück bei",
         charge_voltage: "Ladespannung (je Zelle)", float_voltage: "Erhaltungsspannung (je Zelle)", soc100_voltage: "100 % bei", soc0_voltage: "0 % bei",
@@ -294,7 +294,8 @@
     _header(p, t) {
       const flow = this._flow(p);
       const col = flow === "charging" ? C.green : flow === "discharging" ? C.amber : flow === "offline" ? C.muted : C.blue;
-      const model = [p.info && p.info.model, p.info && p.info.software && `v${p.info.software}`, `#${p.address}`].filter(Boolean).join(" · ");
+      const i = p.info || {};
+      const model = [i.model, i.hardware && `HW ${i.hardware}`, i.software && `FW ${i.software}`, `#${p.address}`].filter(Boolean).join(" · ");
       return `
         <div class="head">
           <div class="htitle">
@@ -348,7 +349,15 @@
           ${hl.time_to_full_min != null ? `<div class="tile"><span>${t.toFull}</span><b style="color:${C.green}">${fmtDur(hl.time_to_full_min, t)}</b></div>` : ""}
           ${hl.time_to_empty_min != null ? `<div class="tile"><span>${t.toEmpty}</span><b style="color:${C.amber}">${fmtDur(hl.time_to_empty_min, t)}</b></div>` : ""}
           ${hl.weakest ? `<div class="tile"><span>${t.weakCell}</span><b style="color:${C.amber}">${t.cell} ${hl.weakest}</b><small>${hl.weakest_share}%</small></div>` : ""}
-        </div>`;
+        </div>
+        ${this._devStrip(p, t)}`;
+    }
+
+    _devStrip(p, t) {
+      const i = p.info;
+      if (!i) return `<div class="devstrip muted"><ha-icon icon="mdi:chip"></ha-icon><span>${p.address === 0 ? t.noInfoMaster : t.noInfo}</span></div>`;
+      const item = (label, v) => (v ? `<span><em>${label}</em>${esc(v)}</span>` : "");
+      return `<div class="devstrip"><ha-icon icon="mdi:chip"></ha-icon>${item(t.model, i.model)}${item(t.hardware, i.hardware)}${item(t.firmware, i.software)}${item(t.serial, i.serial)}${item(t.made, i.manufacturing_date)}</div>`;
     }
 
     // Top view of the pack: two rows of prismatic cells in series, busbars, BMS board with leads.
@@ -580,6 +589,7 @@
           <div class="mcells">${cells.slice(0, half).join("")}</div>
           <div class="mcells">${cells.slice(half).reverse().join("")}</div>
           <div class="mfoot"><span class="fdot ${pf}"></span>${fmtPower(p.power)}<span style="color:${deltaColor(pd)}">Δ ${pd} mV</span>${(p.problems || []).length ? `<ha-icon icon="mdi:alert" class="warn"></ha-icon>` : ""}</div>
+          <div class="mver">${p.info ? `HW ${esc(p.info.hardware || "–")} · FW ${esc(p.info.software || "–")}` : (p.address === 0 ? "master · –" : "–")}</div>
         </button>`;
       };
       const probs = b.problems || [];
@@ -1500,6 +1510,12 @@
     .mfoot .fdot.charging { color:#45D69A; } .mfoot .fdot.discharging { color:#F4B740; } .mfoot .fdot.idle { color:#5AA9FF; }
     .mfoot span:last-of-type { margin-left:auto; }
     .warn { color:#FF5C61; --mdc-icon-size:16px; }
+    .mver { font-size:.68rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .devstrip { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin-top:10px; padding:9px 12px; background:var(--panel); border-radius:12px; font-size:.78rem; }
+    .devstrip ha-icon { --mdc-icon-size:18px; color:var(--muted); }
+    .devstrip em { font-style:normal; color:var(--muted); margin-right:5px; }
+    .devstrip span { white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .devstrip.muted { color:var(--muted); } .devstrip.muted span { white-space:normal; }
     .schips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
     .schip { background:var(--panel); border:1px solid transparent; color:var(--muted); border-radius:999px; padding:6px 12px; font:inherit; font-size:.82rem; cursor:pointer; }
     .schip.sel { color:var(--text); border-color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, transparent); }
