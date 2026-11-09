@@ -484,6 +484,7 @@ class JkBus:
 
     _started = 0.0
     _info_rounds = 0
+    _info_refreshed = False
 
     def start(self, addresses: list[int]) -> None:
         self._started = time.monotonic()
@@ -522,10 +523,13 @@ class JkBus:
                 missing = any(not (self.states.get(a) and self.states[a].info) for a in (self.known or []))
                 # a BMS that never answers (old firmware) is asked less often after 10 tries
                 retry = 120 if self._info_rounds < 10 else 3600
-                if now - self._started > 15 and now - last_info > (retry if missing else 6 * 3600):
+                # info remembered from the last run is refreshed once after every start
+                fresh = not self._info_refreshed
+                if now - self._started > 15 and (fresh or now - last_info > (retry if missing else 6 * 3600)):
                     last_info = now
                     self._info_rounds += 1 if missing else 0
-                    await self.fetch_info(force=not missing)
+                    self._info_refreshed = True
+                    await self.fetch_info(force=fresh or not missing)
                 if self.on_update:
                     self.on_update(-1, 0)
                 continue
