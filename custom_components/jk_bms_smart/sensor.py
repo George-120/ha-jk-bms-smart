@@ -94,6 +94,19 @@ UNIT_SENSORS: tuple[UnitSensor, ...] = (
                value=lambda s, m: round(m.energy.get(s.address, {}).get("discharged", 0.0), 3)),
     UnitSensor(key="runtime", device_class=SensorDeviceClass.DURATION, native_unit_of_measurement=UnitOfTime.SECONDS,
                suggested_unit_of_measurement=UnitOfTime.DAYS, value=_c(lambda c: c.runtime_s), **DIAG),
+    # 1.2: health and time estimates
+    UnitSensor(key="time_to_full", device_class=SensorDeviceClass.DURATION, native_unit_of_measurement=UnitOfTime.MINUTES,
+               suggested_unit_of_measurement=UnitOfTime.HOURS, suggested_display_precision=1, icon="mdi:battery-clock",
+               value=lambda s, m: m.time_to(s.address)[0]),
+    UnitSensor(key="time_to_empty", device_class=SensorDeviceClass.DURATION, native_unit_of_measurement=UnitOfTime.MINUTES,
+               suggested_unit_of_measurement=UnitOfTime.HOURS, suggested_display_precision=1, icon="mdi:battery-clock-outline",
+               value=lambda s, m: m.time_to(s.address)[1]),
+    UnitSensor(key="weakest_cell", icon="mdi:battery-alert-variant-outline",
+               value=lambda s, m: m.health.weak_cell(s.address)["weakest"]),
+    UnitSensor(key="cell_delta_max_today", device_class=SensorDeviceClass.VOLTAGE,
+               native_unit_of_measurement=UnitOfElectricPotential.MILLIVOLT, suggested_display_precision=0,
+               icon="mdi:arrow-expand-vertical",
+               value=lambda s, m: (m.health.today(s.address, _today()) or {}).get("delta_max_mv")),
     UnitSensor(key="heater_current", enabled=False, suggested_display_precision=2, value=_c(lambda c: c.heater_current), **A, **DIAG),
     # settings (read only)
     UnitSensor(key="design_capacity", native_unit_of_measurement=AH, suggested_display_precision=0, icon="mdi:battery-outline",
@@ -139,7 +152,21 @@ BANK_SENSORS: tuple[BankSensor, ...] = (
     BankSensor(key="bank_energy_discharged", field="discharged_kwh", device_class=SensorDeviceClass.ENERGY,
                native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, state_class=SensorStateClass.TOTAL_INCREASING, suggested_display_precision=2),
     BankSensor(key="bank_units_online", field="online", icon="mdi:battery-check", state_class=SensorStateClass.MEASUREMENT),
+    BankSensor(key="bank_soc_spread", field="soc_spread", native_unit_of_measurement=PERCENTAGE,
+               state_class=SensorStateClass.MEASUREMENT, icon="mdi:arrow-split-vertical"),
+    BankSensor(key="bank_time_to_full", field="time_to_full_min", device_class=SensorDeviceClass.DURATION,
+               native_unit_of_measurement=UnitOfTime.MINUTES, suggested_unit_of_measurement=UnitOfTime.HOURS,
+               suggested_display_precision=1, icon="mdi:battery-clock"),
+    BankSensor(key="bank_time_to_empty", field="time_to_empty_min", device_class=SensorDeviceClass.DURATION,
+               native_unit_of_measurement=UnitOfTime.MINUTES, suggested_unit_of_measurement=UnitOfTime.HOURS,
+               suggested_display_precision=1, icon="mdi:battery-clock-outline"),
 )
+
+
+def _today() -> str:
+    from homeassistant.util import dt as dt_util
+
+    return dt_util.now().date().isoformat()
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: JkBmsConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -177,6 +204,11 @@ class JkUnitSensor(JkEntity, SensorEntity):
             state = self.manager.state(self.address)
             if state and state.cells:
                 return {"problems": state.cells.problems, "info": [a for a in state.cells.alarms if a not in state.cells.problems]}
+        if self.key == "weakest_cell":
+            w = self.manager.health.weak_cell(self.address)
+            return {"share_percent": w["weakest_share"], "first_full_cell": w["first_full"],
+                    "first_full_share_percent": w["first_full_share"],
+                    "minutes_lowest_per_cell": w["low_minutes"], "minutes_highest_per_cell": w["high_minutes"]}
         return None
 
 
@@ -262,4 +294,6 @@ class JkBankSensor(JkEntity, SensorEntity):
             for u in self.manager.units
         ]
         bank["entities"] = {k.split(":", 1)[1]: v for k, v in self.manager.own_entities.items() if k.startswith("bank:")}
+        bank["mismatch"] = list(self.manager.settings_mismatch())
+        bank["allow_changes"] = self.manager.allow_changes
         return {"bank": bank}

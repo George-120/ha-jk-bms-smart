@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
-from homeassistant.const import EntityCategory, UnitOfElectricCurrent, UnitOfElectricPotential, UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfElectricCurrent, UnitOfElectricPotential, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -15,6 +15,7 @@ from .protocol import WRITABLE
 V = (NumberDeviceClass.VOLTAGE, UnitOfElectricPotential.VOLT, 0.001)
 A = (NumberDeviceClass.CURRENT, UnitOfElectricCurrent.AMPERE, 0.1)
 T = (NumberDeviceClass.TEMPERATURE, UnitOfTemperature.CELSIUS, 1)
+S = (NumberDeviceClass.DURATION, UnitOfTime.SECONDS, 1)
 
 NUMBERS: dict[str, tuple] = {
     "cell_ovp": V, "cell_ovpr": V, "cell_uvp": V, "cell_uvpr": V,
@@ -23,7 +24,12 @@ NUMBERS: dict[str, tuple] = {
     "max_balance_current": A, "max_charge_current": A, "max_discharge_current": A,
     "design_capacity_ah": (None, "Ah", 1),
     "charge_ot": T, "discharge_ot": T, "charge_ut": T, "mos_ot": T,
+    "charge_otpr": T, "discharge_otpr": T, "charge_utpr": T, "mos_otpr": T,
+    "charge_ocp_delay": S, "charge_ocp_recovery": S, "discharge_ocp_delay": S, "discharge_ocp_recovery": S,
+    "scp_recovery": S, "smart_sleep_voltage": V,
 }
+OPTIONAL = {"charge_otpr", "discharge_otpr", "charge_utpr", "mos_otpr", "charge_ocp_delay", "charge_ocp_recovery",
+            "discharge_ocp_delay", "discharge_ocp_recovery", "scp_recovery", "smart_sleep_voltage"}
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: JkBmsConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -51,7 +57,10 @@ class JkNumber(JkEntity, NumberEntity):
     @property
     def available(self) -> bool:
         state = self.manager.state(self.address)
-        return super().available and bool(state and state.settings)
+        if not (super().available and state and state.settings):
+            return False
+        # newer settings: only when this firmware reports them
+        return self.setting not in OPTIONAL or getattr(state.settings, self.setting) is not None
 
     @property
     def native_value(self) -> float | None:

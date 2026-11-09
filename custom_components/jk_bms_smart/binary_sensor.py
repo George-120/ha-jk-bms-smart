@@ -44,7 +44,7 @@ UNIT_BINARY: tuple[JkBinary, ...] = (
 
 async def async_setup_entry(hass: HomeAssistant, entry: JkBmsConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     manager = entry.runtime_data
-    entities: list[BinarySensorEntity] = [JkBankProblem(manager)]
+    entities: list[BinarySensorEntity] = [JkBankProblem(manager), JkSettingsMismatch(manager)]
     for unit in manager.units:
         entities += [JkUnitBinary(manager, d, unit.address) for d in UNIT_BINARY]
     async_add_entities(entities)
@@ -94,3 +94,26 @@ class JkBankProblem(JkEntity, BinarySensorEntity):
             "problems": bank.get("problems", []),
             "offline": [u.name for u in self.manager.units if not self.manager.online(u.address)],
         }
+
+
+class JkSettingsMismatch(JkEntity, BinarySensorEntity):
+    """On when the packs of the bank do not share the same protection / balancer settings."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_icon = "mdi:file-compare"
+
+    def __init__(self, manager: JkBmsManager) -> None:
+        super().__init__(manager, "settings_mismatch", None)
+
+    @property
+    def available(self) -> bool:
+        return len([u for u in self.manager.units if self.manager.settings_of(u.address)]) > 1
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self.manager.settings_mismatch())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        diff = self.manager.settings_mismatch()
+        return {"settings": {self.manager.setting_label(k): v for k, v in diff.items()}, "keys": list(diff)}

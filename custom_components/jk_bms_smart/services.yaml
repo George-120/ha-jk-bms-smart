@@ -39,6 +39,16 @@ set_setting:
             - discharge_ot
             - charge_ut
             - mos_ot
+            - charge_otpr
+            - discharge_otpr
+            - charge_utpr
+            - mos_otpr
+            - charge_ocp_delay
+            - charge_ocp_recovery
+            - discharge_ocp_delay
+            - discharge_ocp_recovery
+            - scp_recovery
+            - smart_sleep_voltage
     value:
       required: true
       selector:
@@ -52,3 +62,66 @@ set_setting:
       default: false
       selector:
         boolean:
+copy_settings:
+  fields:
+    source:
+      required: true
+      selector:
+        entity:
+          integration: jk_bms_smart
+    targets:
+      required: false
+      selector:
+        entity:
+          integration: jk_bms_smart
+          multiple: true
+    keys:
+      required: false
+      selector:
+        text:
+          multiple: true
+    include_capacity:
+      required: false
+      default: false
+      selector:
+        boolean:
+    dry_run:
+      required: false
+      default: false
+      selector:
+        boolean:
+backup_settings:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: jk_bms_smart
+restore_settings:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: jk_bms_smart
+    file:
+      required: true
+      selector:
+        text:
+    include_switches:
+      required: false
+      default: false
+      selector:
+        boolean:
+    dry_run:
+      required: false
+      default: false
+      selector:
+        boolean:
+reset_cell_statistics:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: jk_bms_smart

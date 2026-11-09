@@ -83,6 +83,7 @@
           "dashboard": "Dashboard erstellen",
           "names": "Namen der Packs",
           "settings": "Aktualisierung",
+          "notifications": "Benachrichtigungen",
           "rescan": "Erneut nach BMS suchen"
         }
       },
@@ -93,6 +94,21 @@
           "poll_interval": "Alle … Sekunden abfragen",
           "stale_after": "Nach … Sekunden ohne Daten als offline zeigen",
           "allow_changes": "Ändern der BMS-Einstellungen erlauben"
+        }
+      },
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "description": "Erhalte eine Nachricht auf dem Handy (Home-Assistant-App) und/oder in den HA-Benachrichtigungen, wenn etwas Aufmerksamkeit braucht. Jede Meldung wartet zuerst kurz (Zelldifferenz 5 Minuten, Temperatur 1 Minute, offline 1 Minute, unterschiedliche Einstellungen 10 Minuten). {count} Benachrichtigungsdienst(e) verfügbar.",
+        "data": {
+          "notify_targets": "Senden an (Handys)",
+          "notify_persistent": "Auch in den Home-Assistant-Benachrichtigungen zeigen",
+          "notify_events": "Melden bei",
+          "alert_delta_mv": "Zelldifferenz über",
+          "alert_temp_high": "Temperatur über",
+          "alert_temp_low": "Temperatur unter",
+          "alert_soc_low": "Akkubank unter (0 = aus)",
+          "notify_resolved": "Auch melden, wenn es behoben ist",
+          "send_test": "Jetzt eine Testnachricht senden"
         }
       },
       "names": {
@@ -291,6 +307,27 @@
       },
       "bank_units_online": {
         "name": "Packs online"
+      },
+      "bank_soc_spread": {
+        "name": "Ladungsdifferenz zwischen Packs"
+      },
+      "bank_time_to_full": {
+        "name": "Zeit bis voll"
+      },
+      "bank_time_to_empty": {
+        "name": "Zeit bis leer"
+      },
+      "time_to_full": {
+        "name": "Zeit bis voll"
+      },
+      "time_to_empty": {
+        "name": "Zeit bis leer"
+      },
+      "weakest_cell": {
+        "name": "Schwächste Zelle"
+      },
+      "cell_delta_max_today": {
+        "name": "Größte Zelldifferenz heute"
       }
     },
     "binary_sensor": {
@@ -320,6 +357,9 @@
       },
       "bank_problem": {
         "name": "Problem"
+      },
+      "settings_mismatch": {
+        "name": "Pack-Einstellungen unterschiedlich"
       }
     },
     "switch": {
@@ -390,6 +430,36 @@
       },
       "set_mos_ot": {
         "name": "MOS zu warm"
+      },
+      "set_charge_otpr": {
+        "name": "Laden zu warm Rückkehr"
+      },
+      "set_discharge_otpr": {
+        "name": "Entladen zu warm Rückkehr"
+      },
+      "set_charge_utpr": {
+        "name": "Laden zu kalt Rückkehr"
+      },
+      "set_mos_otpr": {
+        "name": "MOS zu warm Rückkehr"
+      },
+      "set_charge_ocp_delay": {
+        "name": "Ladeüberstrom Verzögerung"
+      },
+      "set_charge_ocp_recovery": {
+        "name": "Ladeüberstrom Rückkehrzeit"
+      },
+      "set_discharge_ocp_delay": {
+        "name": "Entladeüberstrom Verzögerung"
+      },
+      "set_discharge_ocp_recovery": {
+        "name": "Entladeüberstrom Rückkehrzeit"
+      },
+      "set_scp_recovery": {
+        "name": "Kurzschluss Rückkehrzeit"
+      },
+      "set_smart_sleep_voltage": {
+        "name": "Ruhespannung (Smart Sleep)"
       }
     }
   },
@@ -430,6 +500,74 @@
         }
       }
     },
+    "copy_settings": {
+      "name": "Packs angleichen",
+      "description": "Kopiert die Schutz- und Balancer-Einstellungen eines Packs auf die anderen Packs (nur Administratoren). Schalter und Kapazität bleiben, außer gewünscht. Vorher wird jedes Ziel-Pack gesichert.",
+      "fields": {
+        "source": {
+          "name": "Kopieren von",
+          "description": "Eine Entität des Packs mit den richtigen Einstellungen."
+        },
+        "targets": {
+          "name": "Kopieren nach",
+          "description": "Entitäten der Ziel-Packs; leer = alle anderen Packs."
+        },
+        "keys": {
+          "name": "Nur diese Einstellungen",
+          "description": "Einstellungsschlüssel, z. B. cell_ovp; leer = alle."
+        },
+        "include_capacity": {
+          "name": "Auch Kapazität",
+          "description": "Auch die Akkukapazität (Ah) kopieren."
+        },
+        "dry_run": {
+          "name": "Nur anzeigen",
+          "description": "Zeigt, was sich ändern würde, ohne zu schreiben."
+        }
+      }
+    },
+    "backup_settings": {
+      "name": "Einstellungen sichern",
+      "description": "Speichert die Einstellungen eines Packs (oder aller Packs bei einer Bank-Entität) als JSON in config/jk_bms_smart/backups.",
+      "fields": {
+        "entity_id": {
+          "name": "Pack oder Bank",
+          "description": "Eine JK-BMS-Smart-Entität."
+        }
+      }
+    },
+    "restore_settings": {
+      "name": "Einstellungen wiederherstellen",
+      "description": "Schreibt die Einstellungen aus einer Sicherung zurück in ein Pack (nur Administratoren). Nur abweichende Werte werden geschrieben.",
+      "fields": {
+        "entity_id": {
+          "name": "Pack",
+          "description": "Entität des Ziel-Packs (bei Bank-Entität: das Pack der Sicherung)."
+        },
+        "file": {
+          "name": "Sicherungsdatei",
+          "description": "Dateiname in config/jk_bms_smart/backups."
+        },
+        "include_switches": {
+          "name": "Auch Schalter",
+          "description": "Auch Laden / Entladen / Balancer an-aus wiederherstellen."
+        },
+        "dry_run": {
+          "name": "Nur anzeigen",
+          "description": "Zeigt, was sich ändern würde, ohne zu schreiben."
+        }
+      }
+    },
+    "reset_cell_statistics": {
+      "name": "Statistik der schwächsten Zelle zurücksetzen",
+      "description": "Zählt neu, welche Zelle zuerst leer wird, z. B. nach Zellentausch oder Top-Balancing. Der Tagesverlauf bleibt.",
+      "fields": {
+        "entity_id": {
+          "name": "Pack oder Bank",
+          "description": "Eine JK-BMS-Smart-Entität."
+        }
+      }
+    },
     "create_dashboard": {
       "name": "Dashboard erstellen",
       "description": "Erstellt oder aktualisiert das JK-BMS-Smart-Dashboard (nur Administratoren).",
@@ -439,6 +577,32 @@
           "description": "Nur bei mehr als einem Bus nötig."
         }
       }
+    }
+  },
+  "selector": {
+    "notify_events": {
+      "options": {
+        "offline": "Pack oder RS485-Verbindung offline",
+        "alarm": "BMS-Alarme (Schutz ausgelöst)",
+        "delta": "Zellen driften auseinander",
+        "temp": "Zu warm / zu kalt",
+        "soc_low": "Akkubank fast leer",
+        "mismatch": "Packs haben unterschiedliche Einstellungen"
+      }
+    }
+  },
+  "issues": {
+    "port_lost": {
+      "title": "JK BMS Smart: RS485-Verbindung verloren",
+      "description": "Der USB-RS485-Adapter oder das Netzwerk-Gateway antwortet nicht ({error}). Prüfe, ob der Stick steckt, ob kein Add-on den Port nutzt und die Stromversorgung des Gateways. Diese Meldung verschwindet von selbst."
+    },
+    "pack_offline": {
+      "title": "JK BMS Smart: {pack} sendet keine Daten",
+      "description": "{pack} wurde seit über 10 Minuten nicht gehört. Prüfe das RS485-Kabel (parallel) zwischen den Packs, die DIP-Adresse und ob das Pack eingeschaltet ist. Diese Meldung verschwindet von selbst."
+    },
+    "settings_mismatch": {
+      "title": "JK BMS Smart: Packs haben unterschiedliche Einstellungen",
+      "description": "Packs einer Bank sollten gleich schützen und balancieren. Unterschiedlich: {keys}.\n\nÖffne das JK-BMS-Smart-Dashboard → Einstellungen und drücke **Angleichen** oder nutze die Aktion `jk_bms_smart.copy_settings`. Vorher wird von jedem Pack eine Sicherung erstellt."
     }
   }
 }

@@ -83,6 +83,7 @@
           "dashboard": "Dashboard aanmaken",
           "names": "Namen van de pakketten",
           "settings": "Verversen",
+          "notifications": "Meldingen",
           "rescan": "Opnieuw zoeken naar BMS'en"
         }
       },
@@ -93,6 +94,21 @@
           "poll_interval": "Elke … seconden uitvragen",
           "stale_after": "Offline tonen na … seconden zonder gegevens",
           "allow_changes": "Instellingen van de BMS mogen wijzigen"
+        }
+      },
+      "notifications": {
+        "title": "Meldingen",
+        "description": "Krijg een bericht op je telefoon (Home Assistant-app) en/of in de meldingen van HA als er iets aandacht nodig heeft. Elk bericht wacht eerst even (celverschil 5 minuten, temperatuur 1 minuut, offline 1 minuut, andere instellingen 10 minuten), zodat korte pieken je nooit wakker maken. {count} meldingsdienst(en) beschikbaar.",
+        "data": {
+          "notify_targets": "Sturen naar (telefoons)",
+          "notify_persistent": "Ook tonen in de meldingen van Home Assistant",
+          "notify_events": "Melden bij",
+          "alert_delta_mv": "Celverschil boven",
+          "alert_temp_high": "Temperatuur boven",
+          "alert_temp_low": "Temperatuur onder",
+          "alert_soc_low": "Accubank onder (0 = uit)",
+          "notify_resolved": "Ook melden als het opgelost is",
+          "send_test": "Nu een testbericht sturen"
         }
       },
       "names": {
@@ -291,6 +307,27 @@
       },
       "bank_units_online": {
         "name": "Pakketten online"
+      },
+      "bank_soc_spread": {
+        "name": "Ladingsverschil tussen pakketten"
+      },
+      "bank_time_to_full": {
+        "name": "Tijd tot vol"
+      },
+      "bank_time_to_empty": {
+        "name": "Tijd tot leeg"
+      },
+      "time_to_full": {
+        "name": "Tijd tot vol"
+      },
+      "time_to_empty": {
+        "name": "Tijd tot leeg"
+      },
+      "weakest_cell": {
+        "name": "Zwakste cel"
+      },
+      "cell_delta_max_today": {
+        "name": "Grootste celverschil vandaag"
       }
     },
     "binary_sensor": {
@@ -320,6 +357,9 @@
       },
       "bank_problem": {
         "name": "Probleem"
+      },
+      "settings_mismatch": {
+        "name": "Instellingen verschillen per pakket"
       }
     },
     "switch": {
@@ -390,6 +430,36 @@
       },
       "set_mos_ot": {
         "name": "MOS te warm"
+      },
+      "set_charge_otpr": {
+        "name": "Laden te warm herstel"
+      },
+      "set_discharge_otpr": {
+        "name": "Ontladen te warm herstel"
+      },
+      "set_charge_utpr": {
+        "name": "Laden te koud herstel"
+      },
+      "set_mos_otpr": {
+        "name": "MOS te warm herstel"
+      },
+      "set_charge_ocp_delay": {
+        "name": "Laadstroom te hoog vertraging"
+      },
+      "set_charge_ocp_recovery": {
+        "name": "Laadstroom te hoog hersteltijd"
+      },
+      "set_discharge_ocp_delay": {
+        "name": "Ontlaadstroom te hoog vertraging"
+      },
+      "set_discharge_ocp_recovery": {
+        "name": "Ontlaadstroom te hoog hersteltijd"
+      },
+      "set_scp_recovery": {
+        "name": "Kortsluiting hersteltijd"
+      },
+      "set_smart_sleep_voltage": {
+        "name": "Slaapspanning"
       }
     }
   },
@@ -430,6 +500,74 @@
         }
       }
     },
+    "copy_settings": {
+      "name": "Pakketten gelijk trekken",
+      "description": "Kopieert de beveiligings- en balancerinstellingen van één pakket naar de andere pakketten (alleen beheerders). Schakelaars en capaciteit blijven staan, tenzij je dat vraagt. Van elk doelpakket wordt eerst een back-up gemaakt.",
+      "fields": {
+        "source": {
+          "name": "Kopiëren van",
+          "description": "Een entiteit van het pakket met de goede instellingen."
+        },
+        "targets": {
+          "name": "Kopiëren naar",
+          "description": "Entiteiten van de doelpakketten; leeg = alle andere pakketten."
+        },
+        "keys": {
+          "name": "Alleen deze instellingen",
+          "description": "Instellingssleutels, bijv. cell_ovp; leeg = alle."
+        },
+        "include_capacity": {
+          "name": "Ook capaciteit",
+          "description": "Ook de accucapaciteit (Ah) kopiëren."
+        },
+        "dry_run": {
+          "name": "Alleen tonen",
+          "description": "Laat zien wat er zou veranderen, zonder te schrijven."
+        }
+      }
+    },
+    "backup_settings": {
+      "name": "Instellingen back-uppen",
+      "description": "Slaat de instellingen van een pakket (of van alle pakketten, bij een bank-entiteit) op in een JSON-bestand in config/jk_bms_smart/backups.",
+      "fields": {
+        "entity_id": {
+          "name": "Pakket of bank",
+          "description": "Een JK BMS Smart-entiteit."
+        }
+      }
+    },
+    "restore_settings": {
+      "name": "Instellingen terugzetten",
+      "description": "Schrijft de instellingen uit een back-upbestand terug in een pakket (alleen beheerders). Alleen afwijkende waarden worden geschreven.",
+      "fields": {
+        "entity_id": {
+          "name": "Pakket",
+          "description": "Entiteit van het pakket waarin je terugzet (bij een bank-entiteit: het pakket waar de back-up van is)."
+        },
+        "file": {
+          "name": "Back-upbestand",
+          "description": "Bestandsnaam in config/jk_bms_smart/backups."
+        },
+        "include_switches": {
+          "name": "Ook schakelaars",
+          "description": "Ook laden / ontladen / balanceren aan-uit terugzetten."
+        },
+        "dry_run": {
+          "name": "Alleen tonen",
+          "description": "Laat zien wat er zou veranderen, zonder te schrijven."
+        }
+      }
+    },
+    "reset_cell_statistics": {
+      "name": "Zwakste-cel-statistiek wissen",
+      "description": "Begint opnieuw te tellen welke cel als eerste leeg raakt, bijv. na het vervangen of top-balanceren van cellen. De daggeschiedenis blijft staan.",
+      "fields": {
+        "entity_id": {
+          "name": "Pakket of bank",
+          "description": "Een JK BMS Smart-entiteit."
+        }
+      }
+    },
     "create_dashboard": {
       "name": "Dashboard aanmaken",
       "description": "Maakt of ververst het JK BMS Smart-dashboard (alleen beheerders).",
@@ -439,6 +577,32 @@
           "description": "Alleen nodig bij meer dan één bus."
         }
       }
+    }
+  },
+  "selector": {
+    "notify_events": {
+      "options": {
+        "offline": "Pakket of RS485-verbinding offline",
+        "alarm": "BMS-alarmen (beveiliging aangesproken)",
+        "delta": "Cellen lopen uit elkaar",
+        "temp": "Te warm / te koud",
+        "soc_low": "Accubank bijna leeg",
+        "mismatch": "Pakketten hebben andere instellingen"
+      }
+    }
+  },
+  "issues": {
+    "port_lost": {
+      "title": "JK BMS Smart: RS485-verbinding weg",
+      "description": "De USB-RS485-adapter of netwerkgateway antwoordt niet ({error}). Controleer of de stick erin zit, of geen add-on de poort gebruikt en de voeding van de gateway. Dit bericht verdwijnt vanzelf als de verbinding terug is."
+    },
+    "pack_offline": {
+      "title": "JK BMS Smart: {pack} stuurt geen gegevens",
+      "description": "{pack} is al meer dan 10 minuten niet gehoord terwijl de andere pakketten wel praten. Controleer de RS485-kabel (parallel) tussen de pakketten, het DIP-adres en of het pakket aan staat. Dit bericht verdwijnt vanzelf."
+    },
+    "settings_mismatch": {
+      "title": "JK BMS Smart: pakketten hebben andere instellingen",
+      "description": "Pakketten in één bank horen op dezelfde manier te beveiligen en balanceren. Verschillend: {keys}.\n\nOpen het JK BMS Smart-dashboard → Instellingen en druk op **Gelijk trekken**, of gebruik de actie `jk_bms_smart.copy_settings`. Van elk pakket wordt eerst een back-up gemaakt."
     }
   }
 }

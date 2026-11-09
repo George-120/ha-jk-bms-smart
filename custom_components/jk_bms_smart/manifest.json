@@ -18,5 +18,5 @@
     {"vid": "1A86", "pid": "55D3", "description": "*rs485*"},
     {"vid": "10C4", "pid": "EA60", "description": "*rs485*"}
   ],
-  "version": "1.1.2"
+  "version": "1.2.0"
 }

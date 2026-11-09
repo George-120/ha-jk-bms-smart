@@ -27,11 +27,11 @@ STORE_KEY = f"{DOMAIN}.dashboards"
 
 TEXT = {
     "nl": {"title": "Thuisaccu", "packs": "Accupakketten", "bank": "Accubank", "cells": "Cellen", "sub": "JK BMS via RS485",
-           "settings": "Instellingen", "b_soc": "Lading", "b_power": "Vermogen", "b_energy": "Opgeslagen", "b_delta": "Celverschil"},
+           "settings": "Instellingen", "charts": "Grafieken", "b_soc": "Lading", "b_power": "Vermogen", "b_energy": "Opgeslagen", "b_delta": "Celverschil"},
     "en": {"title": "Home battery", "packs": "Battery packs", "bank": "Battery bank", "cells": "Cells", "sub": "JK BMS over RS485",
-           "settings": "Settings", "b_soc": "Charge", "b_power": "Power", "b_energy": "Stored", "b_delta": "Cell delta"},
+           "settings": "Settings", "charts": "Charts", "b_soc": "Charge", "b_power": "Power", "b_energy": "Stored", "b_delta": "Cell delta"},
     "de": {"title": "Heimspeicher", "packs": "Akkupacks", "bank": "Akkubank", "cells": "Zellen", "sub": "JK BMS über RS485",
-           "settings": "Einstellungen", "b_soc": "Ladung", "b_power": "Leistung", "b_energy": "Gespeichert", "b_delta": "Zelldifferenz"},
+           "settings": "Einstellungen", "charts": "Diagramme", "b_soc": "Ladung", "b_power": "Leistung", "b_energy": "Gespeichert", "b_delta": "Zelldifferenz"},
 }
 
 
@@ -79,6 +79,13 @@ def build_dashboard(manager: JkBmsManager) -> dict[str, Any]:
              "header": header,
              "sections": [{"type": "grid", "cards": [heading(s["cards"][0]["heading"], "mdi:battery"),
                                                      {**s["cards"][1], "tab": "cells", "size": "large"}]} for s in packs]},
+            {"title": t["charts"], "path": "grafieken", "icon": "mdi:chart-line", "type": "sections", "max_columns": 3,
+             "header": header,
+             "sections": [{"type": "grid", "column_span": 3, "cards": [heading(t["bank"], "mdi:home-battery"),
+                                                                       {"type": "custom:jk-bms-smart-chart-card", "entity": bank, "chart": "power"}]},
+                          *[{"type": "grid", "cards": [heading(s["cards"][0]["heading"], "mdi:battery"),
+                                                       {"type": "custom:jk-bms-smart-chart-card", "entity": s["cards"][1]["entity"], "chart": "cells"}]}
+                            for s in packs]]},
             {"title": t["settings"], "path": "instellingen", "icon": "mdi:tune-variant", "type": "sections", "max_columns": 2,
              "header": header,
              "sections": [{"type": "grid", "cards": [heading(t["settings"], "mdi:tune-variant"),

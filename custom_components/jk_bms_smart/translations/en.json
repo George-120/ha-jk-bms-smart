@@ -83,6 +83,7 @@
           "dashboard": "Create dashboard",
           "names": "Names of the packs",
           "settings": "Update interval",
+          "notifications": "Notifications",
           "rescan": "Search for BMS units again"
         }
       },
@@ -93,6 +94,21 @@
           "poll_interval": "Ask every … seconds",
           "stale_after": "Show as offline after … seconds without data",
           "allow_changes": "Allow changing BMS settings"
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Get a message on your phone (Home Assistant app) and/or in the HA notifications when something needs attention. Every message waits a moment first (cell difference 5 minutes, temperature 1 minute, offline 1 minute, different settings 10 minutes), so short spikes never wake you up. {count} notify service(s) available.",
+        "data": {
+          "notify_targets": "Send to (phones)",
+          "notify_persistent": "Also show in Home Assistant notifications",
+          "notify_events": "Notify about",
+          "alert_delta_mv": "Cell difference above",
+          "alert_temp_high": "Temperature above",
+          "alert_temp_low": "Temperature below",
+          "alert_soc_low": "Battery bank below (0 = off)",
+          "notify_resolved": "Also tell me when it is solved",
+          "send_test": "Send a test message now"
         }
       },
       "names": {
@@ -291,6 +307,27 @@
       },
       "bank_units_online": {
         "name": "Packs online"
+      },
+      "bank_soc_spread": {
+        "name": "Charge difference between packs"
+      },
+      "bank_time_to_full": {
+        "name": "Time to full"
+      },
+      "bank_time_to_empty": {
+        "name": "Time to empty"
+      },
+      "time_to_full": {
+        "name": "Time to full"
+      },
+      "time_to_empty": {
+        "name": "Time to empty"
+      },
+      "weakest_cell": {
+        "name": "Weakest cell"
+      },
+      "cell_delta_max_today": {
+        "name": "Largest cell difference today"
       }
     },
     "binary_sensor": {
@@ -320,6 +357,9 @@
       },
       "bank_problem": {
         "name": "Problem"
+      },
+      "settings_mismatch": {
+        "name": "Pack settings differ"
       }
     },
     "switch": {
@@ -390,6 +430,36 @@
       },
       "set_mos_ot": {
         "name": "MOS over-temperature"
+      },
+      "set_charge_otpr": {
+        "name": "Charge over-temperature recovery"
+      },
+      "set_discharge_otpr": {
+        "name": "Discharge over-temperature recovery"
+      },
+      "set_charge_utpr": {
+        "name": "Charge under-temperature recovery"
+      },
+      "set_mos_otpr": {
+        "name": "MOS over-temperature recovery"
+      },
+      "set_charge_ocp_delay": {
+        "name": "Charge overcurrent delay"
+      },
+      "set_charge_ocp_recovery": {
+        "name": "Charge overcurrent recovery time"
+      },
+      "set_discharge_ocp_delay": {
+        "name": "Discharge overcurrent delay"
+      },
+      "set_discharge_ocp_recovery": {
+        "name": "Discharge overcurrent recovery time"
+      },
+      "set_scp_recovery": {
+        "name": "Short-circuit recovery time"
+      },
+      "set_smart_sleep_voltage": {
+        "name": "Smart sleep voltage"
       }
     }
   },
@@ -430,6 +500,74 @@
         }
       }
     },
+    "copy_settings": {
+      "name": "Make packs equal",
+      "description": "Copies the protection and balancer settings of one pack to the other packs (administrators only). Switches and capacity are left alone unless asked. Every target pack is backed up first.",
+      "fields": {
+        "source": {
+          "name": "Copy from",
+          "description": "Any entity of the pack with the right settings."
+        },
+        "targets": {
+          "name": "Copy to",
+          "description": "Entities of the target packs; empty = all other packs."
+        },
+        "keys": {
+          "name": "Only these settings",
+          "description": "Setting keys, e.g. cell_ovp; empty = all."
+        },
+        "include_capacity": {
+          "name": "Also capacity",
+          "description": "Copy the battery capacity (Ah) too."
+        },
+        "dry_run": {
+          "name": "Only show",
+          "description": "Return what would change without writing."
+        }
+      }
+    },
+    "backup_settings": {
+      "name": "Back up settings",
+      "description": "Saves the settings of a pack (or of every pack, for a bank entity) to a JSON file in config/jk_bms_smart/backups.",
+      "fields": {
+        "entity_id": {
+          "name": "Pack or bank",
+          "description": "Any JK BMS Smart entity."
+        }
+      }
+    },
+    "restore_settings": {
+      "name": "Restore settings",
+      "description": "Writes the settings from a backup file back into a pack (administrators only). Only values that differ are written.",
+      "fields": {
+        "entity_id": {
+          "name": "Pack",
+          "description": "Entity of the pack to restore to (a bank entity uses the pack the backup came from)."
+        },
+        "file": {
+          "name": "Backup file",
+          "description": "File name in config/jk_bms_smart/backups."
+        },
+        "include_switches": {
+          "name": "Also switches",
+          "description": "Also restore charge / discharge / balance on-off."
+        },
+        "dry_run": {
+          "name": "Only show",
+          "description": "Return what would change without writing."
+        }
+      }
+    },
+    "reset_cell_statistics": {
+      "name": "Reset weakest-cell statistics",
+      "description": "Starts counting again which cell runs out first, e.g. after replacing or top-balancing cells. Daily history is kept.",
+      "fields": {
+        "entity_id": {
+          "name": "Pack or bank",
+          "description": "Any JK BMS Smart entity."
+        }
+      }
+    },
     "create_dashboard": {
       "name": "Create dashboard",
       "description": "Adds or refreshes the JK BMS Smart dashboard (administrators only).",
@@ -439,6 +577,32 @@
           "description": "Only needed with more than one bus."
         }
       }
+    }
+  },
+  "selector": {
+    "notify_events": {
+      "options": {
+        "offline": "Pack or RS485 connection offline",
+        "alarm": "BMS alarms (protection tripped)",
+        "delta": "Cells drift apart",
+        "temp": "Too warm / too cold",
+        "soc_low": "Battery bank almost empty",
+        "mismatch": "Packs have different settings"
+      }
+    }
+  },
+  "issues": {
+    "port_lost": {
+      "title": "JK BMS Smart: RS485 connection lost",
+      "description": "The USB-RS485 adapter or network gateway does not answer ({error}). Check that the stick is plugged in, that no add-on uses the port, and the gateway's power. This message disappears by itself when the connection is back."
+    },
+    "pack_offline": {
+      "title": "JK BMS Smart: {pack} sends no data",
+      "description": "{pack} has not been heard for more than 10 minutes while other packs are. Check the RS485 (parallel) cable between the packs, the DIP address and that the pack is switched on. This message disappears by itself."
+    },
+    "settings_mismatch": {
+      "title": "JK BMS Smart: packs have different settings",
+      "description": "Packs in one bank should protect and balance the same way. Different: {keys}.\n\nOpen the JK BMS Smart dashboard → Settings and press **Make equal**, or call the action `jk_bms_smart.copy_settings`. A backup of every pack is made first."
     }
   }
 }

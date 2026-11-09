@@ -16,7 +16,7 @@ from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType
 
 from .bus import BusError, PortBusy
-from .const import CARD_BASE, CARD_URL, DOMAIN, VERSION
+from .const import BACKUP_DIR, CARD_BASE, CARD_URL, DOMAIN, VERSION
 from .manager import JkBmsManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,6 +29,10 @@ type JkBmsConfigEntry = ConfigEntry[JkBmsManager]
 
 SERVICE_CREATE_DASHBOARD = "create_dashboard"
 SERVICE_SET_SETTING = "set_setting"
+SERVICE_COPY = "copy_settings"
+SERVICE_BACKUP = "backup_settings"
+SERVICE_RESTORE = "restore_settings"
+SERVICE_RESET_HEALTH = "reset_cell_statistics"
 ATTR_CONFIG_ENTRY = "config_entry_id"
 
 
@@ -58,25 +62,28 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             ) from err
         return {"url_path": url}
 
-    async def _set_setting(call: ServiceCall) -> ServiceResponse:
-        """Used by the settings card: one setting on one pack, or on every pack of the bank."""
+    def _resolve(entity_id: str) -> tuple[JkBmsManager, int | None]:
+        """Entity of a pack → (manager, address); entity of the bank → (manager, None)."""
         from homeassistant.helpers import entity_registry as er
 
-        from .protocol import WRITABLE
-
-        reg = er.async_get(hass)
-        ent = reg.async_get(call.data["entity_id"])
+        ent = er.async_get(hass).async_get(entity_id)
         if ent is None or ent.platform != DOMAIN:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_bus")
         entry = hass.config_entries.async_get_entry(ent.config_entry_id)
         if entry is None or not hasattr(entry, "runtime_data"):
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_bus")
-        manager = entry.runtime_data
+        rest = ent.unique_id[len(entry.entry_id) + 1 :]
+        return entry.runtime_data, None if rest.startswith("bank_") else int(rest.split("_", 1)[0])
+
+    async def _set_setting(call: ServiceCall) -> ServiceResponse:
+        """Used by the settings card: one setting on one pack, or on every pack of the bank."""
+        from .protocol import WRITABLE
+
+        manager, address = _resolve(call.data["entity_id"])
         key = call.data["key"]
         if key not in WRITABLE:
             raise ServiceValidationError(f"Unknown setting {key}")
-        rest = ent.unique_id[len(entry.entry_id) + 1 :]
-        targets = [u.address for u in manager.units] if call.data.get("all_packs") or rest.startswith("bank_") else [int(rest.split("_", 1)[0])]
+        targets = [u.address for u in manager.units] if call.data.get("all_packs") or address is None else [address]
         done, failed = [], {}
         for address in targets:
             try:
@@ -104,6 +111,78 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         ),
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+    async def _copy_settings(call: ServiceCall) -> ServiceResponse:
+        """Make other packs equal to one pack (dry_run = only show what would change)."""
+        manager, source = _resolve(call.data["source"])
+        if source is None:
+            raise ServiceValidationError("Choose an entity of the pack to copy from")
+        wanted = manager.settings_of(source)
+        if wanted is None:
+            raise HomeAssistantError(f"{manager.unit_name(source)}: settings not received yet")
+        targets = [u.address for u in manager.units if u.address != source]
+        if call.data.get("targets"):
+            targets = [a for a in (_resolve(e)[1] for e in call.data["targets"]) if a is not None and a != source]
+        keys = call.data.get("keys") or None
+        if keys is None:
+            from .protocol import COMPARE_KEYS
+
+            keys = list(COMPARE_KEYS) + (["design_capacity_ah"] if call.data.get("include_capacity") else [])
+        results = [await manager.async_apply(a, wanted, keys, dry_run=call.data.get("dry_run", False)) for a in targets]
+        return {"source": manager.unit_name(source), "results": results}
+
+    async def _backup_settings(call: ServiceCall) -> ServiceResponse:
+        manager, address = _resolve(call.data["entity_id"])
+        targets = [u.address for u in manager.units] if address is None else [address]
+        files, failed = [], {}
+        for a in targets:
+            try:
+                files.append(await manager.async_backup(a))
+            except HomeAssistantError as err:
+                failed[manager.unit_name(a)] = str(err)
+        if failed and not files:
+            raise HomeAssistantError("; ".join(f"{k}: {v}" for k, v in failed.items()))
+        return {"files": files, "failed": failed, "folder": BACKUP_DIR}
+
+    async def _restore_settings(call: ServiceCall) -> ServiceResponse:
+        manager, address = _resolve(call.data["entity_id"])
+        doc = await manager.async_read_backup(call.data["file"])
+        if address is None:
+            address = doc.get("address")
+            if address not in {u.address for u in manager.units}:
+                raise ServiceValidationError("Choose the pack to restore to")
+        keys = None if call.data.get("include_switches") else [k for k in doc["settings"] if not k.endswith("_switch")]
+        return await manager.async_apply(address, doc["settings"], keys, dry_run=call.data.get("dry_run", False))
+
+    async def _reset_health(call: ServiceCall) -> None:
+        manager, address = _resolve(call.data["entity_id"])
+        for a in [u.address for u in manager.units] if address is None else [address]:
+            manager.health.reset(a)
+        manager._flush()  # noqa: SLF001
+
+    entity_schema = vol.Schema({vol.Required("entity_id"): cv.entity_id})
+    for name, handler, schema, response in (
+        (SERVICE_COPY, _copy_settings, vol.Schema({
+            vol.Required("source"): cv.entity_id,
+            vol.Optional("targets"): vol.All(cv.ensure_list, [cv.entity_id]),
+            vol.Optional("keys"): vol.All(cv.ensure_list, [cv.string]),
+            vol.Optional("include_capacity", default=False): cv.boolean,
+            vol.Optional("dry_run", default=False): cv.boolean,
+        }), SupportsResponse.OPTIONAL),
+        (SERVICE_BACKUP, _backup_settings, entity_schema, SupportsResponse.OPTIONAL),
+        (SERVICE_RESTORE, _restore_settings, vol.Schema({
+            vol.Required("entity_id"): cv.entity_id,
+            vol.Required("file"): cv.string,
+            vol.Optional("include_switches", default=False): cv.boolean,
+            vol.Optional("dry_run", default=False): cv.boolean,
+        }), SupportsResponse.OPTIONAL),
+        (SERVICE_RESET_HEALTH, _reset_health, entity_schema, SupportsResponse.NONE),
+    ):
+        async_register_admin_service(hass, DOMAIN, name, handler, schema=schema, supports_response=response)
+
+    from .websocket import async_register_websocket
+
+    async_register_websocket(hass)
 
     async_register_admin_service(
         hass,

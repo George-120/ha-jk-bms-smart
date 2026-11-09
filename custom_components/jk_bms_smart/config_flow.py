@@ -23,11 +23,25 @@ from .const import (
     CONF_HOST,
     CONF_PORT,
     CONF_UNITS,
+    DEFAULT_DELTA_MV,
+    DEFAULT_NOTIFY_EVENTS,
     DEFAULT_POLL_INTERVAL,
+    DEFAULT_SOC_LOW,
     DEFAULT_STALE_AFTER,
+    DEFAULT_TEMP_HIGH,
+    DEFAULT_TEMP_LOW,
     DOMAIN,
     NAME,
+    NOTIFY_EVENTS,
     OPT_ALLOW_CHANGES,
+    OPT_DELTA_MV,
+    OPT_NOTIFY_EVENTS,
+    OPT_NOTIFY_PERSISTENT,
+    OPT_NOTIFY_RESOLVED,
+    OPT_NOTIFY_TARGETS,
+    OPT_SOC_LOW,
+    OPT_TEMP_HIGH,
+    OPT_TEMP_LOW,
     OPT_POLL_INTERVAL,
     OPT_STALE_AFTER,
     RS485_HINTS,
@@ -249,7 +263,45 @@ class JkBmsOptionsFlow(OptionsFlow):
         self._error: str | None = None
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        return self.async_show_menu(step_id="init", menu_options=["dashboard", "names", "settings", "rescan"])
+        return self.async_show_menu(step_id="init", menu_options=["dashboard", "names", "settings", "notifications", "rescan"])
+
+    async def async_step_notifications(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        opts = self.config_entry.options
+        if user_input is not None:
+            test = user_input.pop("send_test", False)
+            manager = getattr(self.config_entry, "runtime_data", None)
+            if test and manager is not None:
+                manager.alerts.test(user_input.get(OPT_NOTIFY_TARGETS) or [])
+            return self.async_create_entry(data={**opts, **user_input})
+        services = sorted(self.hass.services.async_services_for_domain("notify"))
+        targets = [s for s in services if s not in ("notify", "persistent_notification", "send_message")]
+        # mobile apps first: those are phones
+        targets.sort(key=lambda s: (not s.startswith("mobile_app_"), s))
+        current = [t for t in opts.get(OPT_NOTIFY_TARGETS, []) if t in targets]
+        num = lambda lo, hi, step, unit: selector.NumberSelector(  # noqa: E731
+            selector.NumberSelectorConfig(min=lo, max=hi, step=step, unit_of_measurement=unit, mode=selector.NumberSelectorMode.BOX))
+        return self.async_show_form(
+            step_id="notifications",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(OPT_NOTIFY_TARGETS, default=current): selector.SelectSelector(
+                        selector.SelectSelectorConfig(options=targets, multiple=True, mode=selector.SelectSelectorMode.LIST)
+                    ),
+                    vol.Required(OPT_NOTIFY_PERSISTENT, default=opts.get(OPT_NOTIFY_PERSISTENT, True)): selector.BooleanSelector(),
+                    vol.Required(OPT_NOTIFY_EVENTS, default=opts.get(OPT_NOTIFY_EVENTS, DEFAULT_NOTIFY_EVENTS)): selector.SelectSelector(
+                        selector.SelectSelectorConfig(options=list(NOTIFY_EVENTS), multiple=True, mode=selector.SelectSelectorMode.LIST,
+                                                      translation_key="notify_events")
+                    ),
+                    vol.Required(OPT_DELTA_MV, default=opts.get(OPT_DELTA_MV, DEFAULT_DELTA_MV)): num(10, 500, 5, "mV"),
+                    vol.Required(OPT_TEMP_HIGH, default=opts.get(OPT_TEMP_HIGH, DEFAULT_TEMP_HIGH)): num(30, 80, 1, "°C"),
+                    vol.Required(OPT_TEMP_LOW, default=opts.get(OPT_TEMP_LOW, DEFAULT_TEMP_LOW)): num(-20, 20, 1, "°C"),
+                    vol.Required(OPT_SOC_LOW, default=opts.get(OPT_SOC_LOW, DEFAULT_SOC_LOW)): num(0, 50, 1, "%"),
+                    vol.Required(OPT_NOTIFY_RESOLVED, default=opts.get(OPT_NOTIFY_RESOLVED, True)): selector.BooleanSelector(),
+                    vol.Optional("send_test", default=False): selector.BooleanSelector(),
+                }
+            ),
+            description_placeholders={"count": str(len(targets))},
+        )
 
     async def async_step_settings(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:

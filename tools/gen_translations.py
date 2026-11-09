@@ -107,6 +107,7 @@ OPTIONS = {
                 "dashboard": t("Create dashboard", "Dashboard aanmaken", "Dashboard erstellen"),
                 "names": t("Names of the packs", "Namen van de pakketten", "Namen der Packs"),
                 "settings": t("Update interval", "Verversen", "Aktualisierung"),
+                "notifications": t("Notifications", "Meldingen", "Benachrichtigungen"),
                 "rescan": t("Search for BMS units again", "Opnieuw zoeken naar BMS'en", "Erneut nach BMS suchen"),
             },
         },
@@ -121,6 +122,25 @@ OPTIONS = {
                 "poll_interval": t("Ask every … seconds", "Elke … seconden uitvragen", "Alle … Sekunden abfragen"),
                 "stale_after": t("Show as offline after … seconds without data", "Offline tonen na … seconden zonder gegevens", "Nach … Sekunden ohne Daten als offline zeigen"),
                 "allow_changes": t("Allow changing BMS settings", "Instellingen van de BMS mogen wijzigen", "Ändern der BMS-Einstellungen erlauben"),
+            },
+        },
+        "notifications": {
+            "title": t("Notifications", "Meldingen", "Benachrichtigungen"),
+            "description": t(
+                "Get a message on your phone (Home Assistant app) and/or in the HA notifications when something needs attention. Every message waits a moment first (cell difference 5 minutes, temperature 1 minute, offline 1 minute, different settings 10 minutes), so short spikes never wake you up. {count} notify service(s) available.",
+                "Krijg een bericht op je telefoon (Home Assistant-app) en/of in de meldingen van HA als er iets aandacht nodig heeft. Elk bericht wacht eerst even (celverschil 5 minuten, temperatuur 1 minuut, offline 1 minuut, andere instellingen 10 minuten), zodat korte pieken je nooit wakker maken. {count} meldingsdienst(en) beschikbaar.",
+                "Erhalte eine Nachricht auf dem Handy (Home-Assistant-App) und/oder in den HA-Benachrichtigungen, wenn etwas Aufmerksamkeit braucht. Jede Meldung wartet zuerst kurz (Zelldifferenz 5 Minuten, Temperatur 1 Minute, offline 1 Minute, unterschiedliche Einstellungen 10 Minuten). {count} Benachrichtigungsdienst(e) verfügbar.",
+            ),
+            "data": {
+                "notify_targets": t("Send to (phones)", "Sturen naar (telefoons)", "Senden an (Handys)"),
+                "notify_persistent": t("Also show in Home Assistant notifications", "Ook tonen in de meldingen van Home Assistant", "Auch in den Home-Assistant-Benachrichtigungen zeigen"),
+                "notify_events": t("Notify about", "Melden bij", "Melden bei"),
+                "alert_delta_mv": t("Cell difference above", "Celverschil boven", "Zelldifferenz über"),
+                "alert_temp_high": t("Temperature above", "Temperatuur boven", "Temperatur über"),
+                "alert_temp_low": t("Temperature below", "Temperatuur onder", "Temperatur unter"),
+                "alert_soc_low": t("Battery bank below (0 = off)", "Accubank onder (0 = uit)", "Akkubank unter (0 = aus)"),
+                "notify_resolved": t("Also tell me when it is solved", "Ook melden als het opgelost is", "Auch melden, wenn es behoben ist"),
+                "send_test": t("Send a test message now", "Nu een testbericht sturen", "Jetzt eine Testnachricht senden"),
             },
         },
         "names": {
@@ -215,6 +235,13 @@ SENSORS = {
     "bank_energy_charged": t("Energy charged", "Energie geladen", "Energie geladen"),
     "bank_energy_discharged": t("Energy discharged", "Energie ontladen", "Energie entladen"),
     "bank_units_online": t("Packs online", "Pakketten online", "Packs online"),
+    "bank_soc_spread": t("Charge difference between packs", "Ladingsverschil tussen pakketten", "Ladungsdifferenz zwischen Packs"),
+    "bank_time_to_full": t("Time to full", "Tijd tot vol", "Zeit bis voll"),
+    "bank_time_to_empty": t("Time to empty", "Tijd tot leeg", "Zeit bis leer"),
+    "time_to_full": t("Time to full", "Tijd tot vol", "Zeit bis voll"),
+    "time_to_empty": t("Time to empty", "Tijd tot leeg", "Zeit bis leer"),
+    "weakest_cell": t("Weakest cell", "Zwakste cel", "Schwächste Zelle"),
+    "cell_delta_max_today": t("Largest cell difference today", "Grootste celverschil vandaag", "Größte Zelldifferenz heute"),
 }
 BALANCE_STATES = {
     "off": t("Idle", "Rust", "Ruhe"),
@@ -231,33 +258,19 @@ BINARY = {
     "precharge": t("Precharge", "Voorladen", "Vorladung"),
     "problem": t("Problem", "Probleem", "Problem"),
     "bank_problem": t("Problem", "Probleem", "Problem"),
+    "settings_mismatch": t("Pack settings differ", "Instellingen verschillen per pakket", "Pack-Einstellungen unterschiedlich"),
 }
 SWITCHES = {
     "charge_switch": t("Charging", "Laden", "Laden"),
     "discharge_switch": t("Discharging", "Ontladen", "Entladen"),
     "balance_switch": t("Balancer", "Balanceren", "Balancer"),
 }
-NUMBERS = {
-    "set_cell_ovp": t("Cell overvoltage protection", "Cel-overspanningsbeveiliging", "Zellüberspannungsschutz"),
-    "set_cell_ovpr": t("Cell overvoltage recovery", "Cel-overspanning herstel", "Zellüberspannung Rückkehr"),
-    "set_cell_uvp": t("Cell undervoltage protection", "Cel-onderspanningsbeveiliging", "Zellunterspannungsschutz"),
-    "set_cell_uvpr": t("Cell undervoltage recovery", "Cel-onderspanning herstel", "Zellunterspannung Rückkehr"),
-    "set_charge_voltage": t("Charge voltage per cell", "Laadspanning per cel", "Ladespannung je Zelle"),
-    "set_float_voltage": t("Float voltage per cell", "Druppelspanning per cel", "Erhaltungsspannung je Zelle"),
-    "set_soc100_voltage": t("100 % at cell voltage", "100 % bij celspanning", "100 % bei Zellspannung"),
-    "set_soc0_voltage": t("0 % at cell voltage", "0 % bij celspanning", "0 % bei Zellspannung"),
-    "set_power_off_voltage": t("Power-off cell voltage", "Uitschakelspanning per cel", "Abschaltspannung je Zelle"),
-    "set_balance_start": t("Balance from cell voltage", "Balanceren vanaf celspanning", "Balancieren ab Zellspannung"),
-    "set_balance_trigger": t("Balance trigger difference", "Balanceren vanaf verschil", "Balancieren ab Differenz"),
-    "set_max_balance_current": t("Max balance current", "Max. balanceerstroom", "Max. Balancierstrom"),
-    "set_max_charge_current": t("Max charge current", "Max. laadstroom", "Max. Ladestrom"),
-    "set_max_discharge_current": t("Max discharge current", "Max. ontlaadstroom", "Max. Entladestrom"),
-    "set_design_capacity_ah": t("Battery capacity", "Accucapaciteit", "Akkukapazität"),
-    "set_charge_ot": t("Charge over-temperature", "Laden te warm", "Laden zu warm"),
-    "set_discharge_ot": t("Discharge over-temperature", "Ontladen te warm", "Entladen zu warm"),
-    "set_charge_ut": t("Charge under-temperature", "Laden te koud", "Laden zu kalt"),
-    "set_mos_ot": t("MOS over-temperature", "MOS te warm", "MOS zu warm"),
-}
+import sys  # noqa: E402
+
+sys.path.insert(0, str(ROOT))
+from labels import SETTING_LABELS  # noqa: E402
+
+NUMBERS = {f"set_{k}": t(*v) for k, v in SETTING_LABELS.items() if not k.endswith("_switch")}
 EXCEPTIONS = {
     "port_busy": t(
         "The RS485 port is in use ({error}). Stop the add-on or program that uses it.",
@@ -282,6 +295,53 @@ SERVICES = {
             "value": {"name": t("Value", "Waarde", "Wert"), "description": t("Volts, amps, Ah or °C; switches 1 = on, 0 = off.", "Volt, ampère, Ah of °C; schakelaars 1 = aan, 0 = uit.", "Volt, Ampere, Ah oder °C; Schalter 1 = an, 0 = aus.")},
             "all_packs": {"name": t("All packs", "Alle pakketten", "Alle Packs"), "description": t("Apply to every pack of the bank.", "Toepassen op alle pakketten van de bank.", "Auf alle Packs der Bank anwenden.")},
         },
+    },
+    "copy_settings": {
+        "name": t("Make packs equal", "Pakketten gelijk trekken", "Packs angleichen"),
+        "description": t(
+            "Copies the protection and balancer settings of one pack to the other packs (administrators only). Switches and capacity are left alone unless asked. Every target pack is backed up first.",
+            "Kopieert de beveiligings- en balancerinstellingen van één pakket naar de andere pakketten (alleen beheerders). Schakelaars en capaciteit blijven staan, tenzij je dat vraagt. Van elk doelpakket wordt eerst een back-up gemaakt.",
+            "Kopiert die Schutz- und Balancer-Einstellungen eines Packs auf die anderen Packs (nur Administratoren). Schalter und Kapazität bleiben, außer gewünscht. Vorher wird jedes Ziel-Pack gesichert.",
+        ),
+        "fields": {
+            "source": {"name": t("Copy from", "Kopiëren van", "Kopieren von"), "description": t("Any entity of the pack with the right settings.", "Een entiteit van het pakket met de goede instellingen.", "Eine Entität des Packs mit den richtigen Einstellungen.")},
+            "targets": {"name": t("Copy to", "Kopiëren naar", "Kopieren nach"), "description": t("Entities of the target packs; empty = all other packs.", "Entiteiten van de doelpakketten; leeg = alle andere pakketten.", "Entitäten der Ziel-Packs; leer = alle anderen Packs.")},
+            "keys": {"name": t("Only these settings", "Alleen deze instellingen", "Nur diese Einstellungen"), "description": t("Setting keys, e.g. cell_ovp; empty = all.", "Instellingssleutels, bijv. cell_ovp; leeg = alle.", "Einstellungsschlüssel, z. B. cell_ovp; leer = alle.")},
+            "include_capacity": {"name": t("Also capacity", "Ook capaciteit", "Auch Kapazität"), "description": t("Copy the battery capacity (Ah) too.", "Ook de accucapaciteit (Ah) kopiëren.", "Auch die Akkukapazität (Ah) kopieren.")},
+            "dry_run": {"name": t("Only show", "Alleen tonen", "Nur anzeigen"), "description": t("Return what would change without writing.", "Laat zien wat er zou veranderen, zonder te schrijven.", "Zeigt, was sich ändern würde, ohne zu schreiben.")},
+        },
+    },
+    "backup_settings": {
+        "name": t("Back up settings", "Instellingen back-uppen", "Einstellungen sichern"),
+        "description": t(
+            "Saves the settings of a pack (or of every pack, for a bank entity) to a JSON file in config/jk_bms_smart/backups.",
+            "Slaat de instellingen van een pakket (of van alle pakketten, bij een bank-entiteit) op in een JSON-bestand in config/jk_bms_smart/backups.",
+            "Speichert die Einstellungen eines Packs (oder aller Packs bei einer Bank-Entität) als JSON in config/jk_bms_smart/backups.",
+        ),
+        "fields": {"entity_id": {"name": t("Pack or bank", "Pakket of bank", "Pack oder Bank"), "description": t("Any JK BMS Smart entity.", "Een JK BMS Smart-entiteit.", "Eine JK-BMS-Smart-Entität.")}},
+    },
+    "restore_settings": {
+        "name": t("Restore settings", "Instellingen terugzetten", "Einstellungen wiederherstellen"),
+        "description": t(
+            "Writes the settings from a backup file back into a pack (administrators only). Only values that differ are written.",
+            "Schrijft de instellingen uit een back-upbestand terug in een pakket (alleen beheerders). Alleen afwijkende waarden worden geschreven.",
+            "Schreibt die Einstellungen aus einer Sicherung zurück in ein Pack (nur Administratoren). Nur abweichende Werte werden geschrieben.",
+        ),
+        "fields": {
+            "entity_id": {"name": t("Pack", "Pakket", "Pack"), "description": t("Entity of the pack to restore to (a bank entity uses the pack the backup came from).", "Entiteit van het pakket waarin je terugzet (bij een bank-entiteit: het pakket waar de back-up van is).", "Entität des Ziel-Packs (bei Bank-Entität: das Pack der Sicherung).")},
+            "file": {"name": t("Backup file", "Back-upbestand", "Sicherungsdatei"), "description": t("File name in config/jk_bms_smart/backups.", "Bestandsnaam in config/jk_bms_smart/backups.", "Dateiname in config/jk_bms_smart/backups.")},
+            "include_switches": {"name": t("Also switches", "Ook schakelaars", "Auch Schalter"), "description": t("Also restore charge / discharge / balance on-off.", "Ook laden / ontladen / balanceren aan-uit terugzetten.", "Auch Laden / Entladen / Balancer an-aus wiederherstellen.")},
+            "dry_run": {"name": t("Only show", "Alleen tonen", "Nur anzeigen"), "description": t("Return what would change without writing.", "Laat zien wat er zou veranderen, zonder te schrijven.", "Zeigt, was sich ändern würde, ohne zu schreiben.")},
+        },
+    },
+    "reset_cell_statistics": {
+        "name": t("Reset weakest-cell statistics", "Zwakste-cel-statistiek wissen", "Statistik der schwächsten Zelle zurücksetzen"),
+        "description": t(
+            "Starts counting again which cell runs out first, e.g. after replacing or top-balancing cells. Daily history is kept.",
+            "Begint opnieuw te tellen welke cel als eerste leeg raakt, bijv. na het vervangen of top-balanceren van cellen. De daggeschiedenis blijft staan.",
+            "Zählt neu, welche Zelle zuerst leer wird, z. B. nach Zellentausch oder Top-Balancing. Der Tagesverlauf bleibt.",
+        ),
+        "fields": {"entity_id": {"name": t("Pack or bank", "Pakket of bank", "Pack oder Bank"), "description": t("Any JK BMS Smart entity.", "Een JK BMS Smart-entiteit.", "Eine JK-BMS-Smart-Entität.")}},
     },
     "create_dashboard": {
         "name": t("Create dashboard", "Dashboard aanmaken", "Dashboard erstellen"),
@@ -316,6 +376,44 @@ CONFIG["step"]["found"]["data"].update(NAME_FIELDS)
 OPTIONS["step"]["names"]["data"] = dict(NAME_FIELDS)
 
 
+SELECTOR = {
+    "notify_events": {"options": {
+        "offline": t("Pack or RS485 connection offline", "Pakket of RS485-verbinding offline", "Pack oder RS485-Verbindung offline"),
+        "alarm": t("BMS alarms (protection tripped)", "BMS-alarmen (beveiliging aangesproken)", "BMS-Alarme (Schutz ausgelöst)"),
+        "delta": t("Cells drift apart", "Cellen lopen uit elkaar", "Zellen driften auseinander"),
+        "temp": t("Too warm / too cold", "Te warm / te koud", "Zu warm / zu kalt"),
+        "soc_low": t("Battery bank almost empty", "Accubank bijna leeg", "Akkubank fast leer"),
+        "mismatch": t("Packs have different settings", "Pakketten hebben andere instellingen", "Packs haben unterschiedliche Einstellungen"),
+    }}
+}
+ISSUES = {
+    "port_lost": {
+        "title": t("JK BMS Smart: RS485 connection lost", "JK BMS Smart: RS485-verbinding weg", "JK BMS Smart: RS485-Verbindung verloren"),
+        "description": t(
+            "The USB-RS485 adapter or network gateway does not answer ({error}). Check that the stick is plugged in, that no add-on uses the port, and the gateway's power. This message disappears by itself when the connection is back.",
+            "De USB-RS485-adapter of netwerkgateway antwoordt niet ({error}). Controleer of de stick erin zit, of geen add-on de poort gebruikt en de voeding van de gateway. Dit bericht verdwijnt vanzelf als de verbinding terug is.",
+            "Der USB-RS485-Adapter oder das Netzwerk-Gateway antwortet nicht ({error}). Prüfe, ob der Stick steckt, ob kein Add-on den Port nutzt und die Stromversorgung des Gateways. Diese Meldung verschwindet von selbst.",
+        ),
+    },
+    "pack_offline": {
+        "title": t("JK BMS Smart: {pack} sends no data", "JK BMS Smart: {pack} stuurt geen gegevens", "JK BMS Smart: {pack} sendet keine Daten"),
+        "description": t(
+            "{pack} has not been heard for more than 10 minutes while other packs are. Check the RS485 (parallel) cable between the packs, the DIP address and that the pack is switched on. This message disappears by itself.",
+            "{pack} is al meer dan 10 minuten niet gehoord terwijl de andere pakketten wel praten. Controleer de RS485-kabel (parallel) tussen de pakketten, het DIP-adres en of het pakket aan staat. Dit bericht verdwijnt vanzelf.",
+            "{pack} wurde seit über 10 Minuten nicht gehört. Prüfe das RS485-Kabel (parallel) zwischen den Packs, die DIP-Adresse und ob das Pack eingeschaltet ist. Diese Meldung verschwindet von selbst.",
+        ),
+    },
+    "settings_mismatch": {
+        "title": t("JK BMS Smart: packs have different settings", "JK BMS Smart: pakketten hebben andere instellingen", "JK BMS Smart: Packs haben unterschiedliche Einstellungen"),
+        "description": t(
+            "Packs in one bank should protect and balance the same way. Different: {keys}.\n\nOpen the JK BMS Smart dashboard → Settings and press **Make equal**, or call the action `jk_bms_smart.copy_settings`. A backup of every pack is made first.",
+            "Pakketten in één bank horen op dezelfde manier te beveiligen en balanceren. Verschillend: {keys}.\n\nOpen het JK BMS Smart-dashboard → Instellingen en druk op **Gelijk trekken**, of gebruik de actie `jk_bms_smart.copy_settings`. Van elk pakket wordt eerst een back-up gemaakt.",
+            "Packs einer Bank sollten gleich schützen und balancieren. Unterschiedlich: {keys}.\n\nÖffne das JK-BMS-Smart-Dashboard → Einstellungen und drücke **Angleichen** oder nutze die Aktion `jk_bms_smart.copy_settings`. Vorher wird von jedem Pack eine Sicherung erstellt.",
+        ),
+    },
+}
+
+
 def build(lang: str) -> dict:
     sensor = {k: {"name": v} for k, v in SENSORS.items()}
     sensor["balance_state"]["state"] = BALANCE_STATES
@@ -327,6 +425,8 @@ def build(lang: str) -> dict:
                    "number": {k: {"name": v} for k, v in NUMBERS.items()}},
         "exceptions": {k: {"message": v} for k, v in EXCEPTIONS.items()},
         "services": SERVICES,
+        "selector": SELECTOR,
+        "issues": ISSUES,
     }
     return pick(out, lang)
 
