@@ -461,6 +461,11 @@
       "set_smart_sleep_voltage": {
         "name": "Slaapspanning"
       }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
     }
   },
   "exceptions": {

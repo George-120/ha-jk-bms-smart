@@ -1,0 +1,12 @@
+{
+  "_comment": "Newest known JK PB firmware per model. Read by JK BMS Smart (update entity). Source: JK firmware download library; always check hardware revision and release notes with JK before flashing.",
+  "updated": "2026-11-09",
+  "models": {
+    "JK-PB1A16S10P": {"latest": "19.31", "date": "2026-08-07", "url": "https://www.jkbms.net/downloads/firmware"},
+    "JK-PB1A16S15P": {"latest": "19.31", "date": "2026-08-07", "url": "https://www.jkbms.net/downloads/firmware"},
+    "JK-PB2A16S10P": {"latest": "19.31", "date": "2026-08-07", "url": "https://www.jkbms.net/downloads/firmware"},
+    "JK-PB2A16S15P": {"latest": "19.31", "date": "2026-08-07", "url": "https://www.jkbms.net/downloads/firmware"},
+    "JK-PB2A16S20P": {"latest": "19.31", "date": "2026-08-07", "url": "https://www.jkbms.net/downloads/firmware"},
+    "JK-PB2A16S30P": {"latest": "19.31", "date": "2026-08-07", "url": "https://www.jkbms.net/downloads/firmware"}
+  }
+}

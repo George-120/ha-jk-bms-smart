@@ -598,6 +598,7 @@ class Settings:
 FLAG_BITS = {
     "heating": 0, "disable_temp_sensors": 1, "gps_heartbeat": 2, "port_rs485": 3, "display_always_on": 4,
     "special_charger": 5, "smart_sleep": 6, "disable_pcl_module": 7, "timed_stored_data": 8, "charging_float_mode": 9,
+    "emergency": 10, "dry_alarm_intermittent": 11, "discharge_ocp2": 12, "discharge_ocp3": 13,
 }
 
 
@@ -665,6 +666,18 @@ class DeviceInfo:
     name: str
     manufacturing_date: str
     serial: str
+    # 1.3 (PB / JK02_32S layout; None when the firmware does not fill them in)
+    uart1_protocol: int | None = None
+    can_protocol: int | None = None
+    uart2_protocol: int | None = None
+    uart3_protocol: int | None = None
+    rcv_time_h: float | None = None
+    rfv_time_h: float | None = None
+    rebulk_soc: int | None = None
+    emergency_min: int | None = None
+    lcd_buzzer_trigger: int | None = None
+    dry1_trigger: int | None = None
+    dry2_trigger: int | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
@@ -682,4 +695,15 @@ def decode_info(b: bytes) -> DeviceInfo:
         name=_text(b, 46, 16),
         manufacturing_date=f"20{date[:2]}-{date[2:4]}-{date[4:6]}" if len(date) == 6 and date.isdigit() else "",
         serial=_text(b, 86, 11),
+        uart1_protocol=b[184],
+        can_protocol=b[185],
+        uart2_protocol=b[218],
+        uart3_protocol=b[270],
+        rcv_time_h=b[266] / 10 if b[266] else None,
+        rfv_time_h=b[267] / 10 if b[267] else None,
+        rebulk_soc=b[278] or None,
+        emergency_min=b[269] or None,
+        lcd_buzzer_trigger=b[234],
+        dry1_trigger=b[235],
+        dry2_trigger=b[236],
     )

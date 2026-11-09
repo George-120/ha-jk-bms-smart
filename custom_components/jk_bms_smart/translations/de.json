@@ -461,6 +461,11 @@
       "set_smart_sleep_voltage": {
         "name": "Ruhespannung (Smart Sleep)"
       }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
     }
   },
   "exceptions": {

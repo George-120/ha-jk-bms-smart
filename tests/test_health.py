@@ -74,3 +74,19 @@ def test_weak_cell_and_days():
     assert t2.weak_cell(0)["weakest"] == 7
     t2.reset(0)
     assert t2.weak_cell(0)["weakest"] is None
+
+
+def test_firmware_helpers():
+    import importlib.util
+    import json
+
+    # firmware.py imports Home Assistant only for loading; test the pure helpers by reading the source
+    src = (Path(__file__).resolve().parent.parent / "custom_components" / "jk_bms_smart" / "firmware.py").read_text()
+    ns: dict = {}
+    exec(src.split("from homeassistant")[0] + src.split("BUNDLED = ")[1].split("\n", 1)[1].split("async def async_load")[0]
+         + "def newer" + src.split("def newer")[1], ns)  # noqa: S102
+    assert ns["model_key"]("JK_PB2A16S30P") == ns["model_key"]("JK-PB2A16S-30P") == "JKPB2A16S30P"
+    table = ns["parse"](json.loads((Path(__file__).resolve().parent.parent / "firmware.json").read_text()))
+    assert table["JKPB2A16S30P"]["latest"]
+    assert ns["newer"]("19.27", "19.31") and not ns["newer"]("19.31", "19.31") and not ns["newer"](None, "19.31")
+    assert importlib.util is not None

@@ -92,6 +92,8 @@ class JkBmsManager:
         data = await self._store.async_load() or {}
         self.energy = {int(k): v for k, v in (data.get("energy") or {}).items()}
         self.health = HealthTracker((await self._health_store.async_load() or {}).get("packs"))
+        self.hass.async_create_task(self._async_firmware())
+        self._unsubs.append(async_track_time_interval(self.hass, self._async_firmware, timedelta(hours=24)))
         # device info (model, firmware, serial) from the last run: shown right away after a restart
         for key, info in (data.get("info") or {}).items():
             try:
@@ -217,6 +219,26 @@ class JkBmsManager:
             "charged_kwh": round(energy_in, 3),
             "discharged_kwh": round(energy_out, 3),
         }
+
+    # ---- firmware
+
+    firmware: dict[str, dict[str, Any]] = {}
+
+    async def _async_firmware(self, *_: Any) -> None:
+        from .firmware import async_load
+
+        try:
+            self.firmware = await async_load(self.hass)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("Firmware list not loaded: %s", err)
+
+    def firmware_for(self, address: int) -> dict[str, Any] | None:
+        from .firmware import model_key
+
+        s = self.bus.states.get(address)
+        if not s or not s.info:
+            return None
+        return self.firmware.get(model_key(s.info.model))
 
     # ---- health
 
@@ -429,10 +451,13 @@ class JkBmsManager:
             out["settings"] = {k: v for k, v in s.settings.as_dict().items() if k not in ("address",)}
         out["health"] = self.health_payload(address)
         if s.info:
-            out["info"] = {
-                "model": s.info.model, "hardware": s.info.hardware, "software": s.info.software,
-                "serial": s.info.serial, "manufacturing_date": s.info.manufacturing_date,
-            }
+            out["info"] = s.info.as_dict()
+            fw = self.firmware_for(address)
+            if fw:
+                from .firmware import newer
+
+                out["firmware"] = {"latest": fw["latest"], "date": fw.get("date"), "url": fw.get("url"),
+                                   "update": newer(s.info.software, fw["latest"])}
         energy = self.energy.get(address, {})
         out["charged_kwh"] = round(energy.get("charged", 0.0), 3)
         out["discharged_kwh"] = round(energy.get("discharged", 0.0), 3)

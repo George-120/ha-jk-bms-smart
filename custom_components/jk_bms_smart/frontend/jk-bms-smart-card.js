@@ -1,6 +1,6 @@
 /* JK BMS Smart cards — battery packs with their 16 prismatic cells, served by the jk_bms_smart integration. */
 (() => {
-  const VERSION = "1.2.2";
+  const VERSION = "1.3.0";
   const BASE = document.currentScript && document.currentScript.src
     ? new URL(".", document.currentScript.src).href
     : "/jk_bms_smart/";
@@ -15,7 +15,7 @@
       mos: "MOS", temp: "Temp", chg: "CHG", dsg: "DSG", bal: "BAL", heat: "Heat", on: "on", off: "off",
       balanceStates: { off: "idle", charging: "moving charge", discharging: "moving charge" },
       resistance: "Wire resistance", cell: "Cell", problemsTitle: "Needs attention", allGood: "No alarms", infoOnly: "Notice",
-      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serial", made: "Made", noInfo: "Model and firmware are being read…", noInfoMaster: "Master BMS (address 0): it does not report its model and firmware over RS485-2.", address: "RS485 address", runtime: "Running",
+      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serial", made: "Made", noInfo: "Model and firmware are being read…", powerOns: "Times switched on", devName: "Device name", rcvTime: "Charge-voltage hold time", rfvTime: "Float-voltage hold time", rebulk: "Bulk charge again below", emergency: "Emergency time", protocols: "Protocols", fwOk: "Firmware {v} is the newest known version.", fwNew: "Firmware {v} available", fwHow: "This pack runs {cur} (hardware {hw}). Update with the JK PC software and a USB-RS485 adapter; check with JK first that it fits your hardware and back up the settings.", fwLink: "Download page", fwUnknown: "No firmware information known for this model.", noInfoMaster: "Master BMS (address 0): it does not report its model and firmware over RS485-2.", address: "RS485 address", runtime: "Running",
       days: "days", mode: "Bus mode", listen: "listening (BMS is master)", poll: "polling", energyIn: "Charged", energyOut: "Discharged",
       settings: { cell_ovp: "Cell overvoltage", cell_ovpr: "… recovers at", cell_uvp: "Cell undervoltage", cell_uvpr: "… recovers at",
         charge_voltage: "Charge voltage (per cell)", float_voltage: "Float voltage (per cell)", soc100_voltage: "100 % at", soc0_voltage: "0 % at",
@@ -45,7 +45,7 @@
       mos: "MOS", temp: "Temp", chg: "LAD", dsg: "ONT", bal: "BAL", heat: "Verw.", on: "aan", off: "uit",
       balanceStates: { off: "rust", charging: "verplaatst lading", discharging: "verplaatst lading" },
       resistance: "Draadweerstand", cell: "Cel", problemsTitle: "Let op", allGood: "Geen alarmen", infoOnly: "Melding",
-      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serienummer", made: "Productie", noInfo: "Model en firmware worden opgehaald…", noInfoMaster: "Master-BMS (adres 0): die geeft zijn model en firmware niet door via RS485-2.", address: "RS485-adres", runtime: "Draaitijd",
+      model: "Model", firmware: "Firmware", hardware: "Hardware", serial: "Serienummer", made: "Productie", noInfo: "Model en firmware worden opgehaald…", powerOns: "Aantal keer aangezet", devName: "Apparaatnaam", rcvTime: "Laadspanning vasthouden", rfvTime: "Druppelspanning vasthouden", rebulk: "Opnieuw vol laden onder", emergency: "Noodtijd", protocols: "Protocollen", fwOk: "Firmware {v} is de nieuwste bekende versie.", fwNew: "Firmware {v} beschikbaar", fwHow: "Dit pakket draait {cur} (hardware {hw}). Bijwerken gaat met de JK PC-software en een USB-RS485-adapter; vraag JK eerst of hij bij je hardware hoort en maak een back-up van de instellingen.", fwLink: "Downloadpagina", fwUnknown: "Geen firmware-informatie bekend voor dit model.", noInfoMaster: "Master-BMS (adres 0): die geeft zijn model en firmware niet door via RS485-2.", address: "RS485-adres", runtime: "Draaitijd",
       days: "dagen", mode: "Busmodus", listen: "luisteren (BMS is master)", poll: "uitvragen", energyIn: "Geladen", energyOut: "Ontladen",
       settings: { cell_ovp: "Cel overspanning", cell_ovpr: "… herstelt bij", cell_uvp: "Cel onderspanning", cell_uvpr: "… herstelt bij",
         charge_voltage: "Laadspanning (per cel)", float_voltage: "Druppelspanning (per cel)", soc100_voltage: "100 % bij", soc0_voltage: "0 % bij",
@@ -75,7 +75,7 @@
       mos: "MOS", temp: "Temp", chg: "LAD", dsg: "ENT", bal: "BAL", heat: "Heiz.", on: "an", off: "aus",
       balanceStates: { off: "Ruhe", charging: "verschiebt Ladung", discharging: "verschiebt Ladung" },
       resistance: "Leitungswiderstand", cell: "Zelle", problemsTitle: "Achtung", allGood: "Keine Alarme", infoOnly: "Hinweis",
-      model: "Modell", firmware: "Firmware", hardware: "Hardware", serial: "Seriennummer", made: "Produktion", noInfo: "Modell und Firmware werden gelesen…", noInfoMaster: "Master-BMS (Adresse 0): meldet Modell und Firmware nicht über RS485-2.", address: "RS485-Adresse", runtime: "Laufzeit",
+      model: "Modell", firmware: "Firmware", hardware: "Hardware", serial: "Seriennummer", made: "Produktion", noInfo: "Modell und Firmware werden gelesen…", powerOns: "Einschaltvorgänge", devName: "Gerätename", rcvTime: "Ladespannung halten", rfvTime: "Erhaltungsspannung halten", rebulk: "Erneut voll laden unter", emergency: "Notzeit", protocols: "Protokolle", fwOk: "Firmware {v} ist die neueste bekannte Version.", fwNew: "Firmware {v} verfügbar", fwHow: "Dieses Pack läuft mit {cur} (Hardware {hw}). Update mit der JK-PC-Software und einem USB-RS485-Adapter; vorher bei JK prüfen, ob es zur Hardware passt, und Einstellungen sichern.", fwLink: "Download-Seite", fwUnknown: "Keine Firmware-Info für dieses Modell bekannt.", noInfoMaster: "Master-BMS (Adresse 0): meldet Modell und Firmware nicht über RS485-2.", address: "RS485-Adresse", runtime: "Laufzeit",
       days: "Tage", mode: "Busmodus", listen: "mithören (BMS ist Master)", poll: "abfragen", energyIn: "Geladen", energyOut: "Entladen",
       settings: { cell_ovp: "Zellüberspannung", cell_ovpr: "… zurück bei", cell_uvp: "Zellunterspannung", cell_uvpr: "… zurück bei",
         charge_voltage: "Ladespannung (je Zelle)", float_voltage: "Erhaltungsspannung (je Zelle)", soc100_voltage: "100 % bei", soc0_voltage: "0 % bei",
@@ -357,7 +357,8 @@
       const i = p.info;
       if (!i) return `<div class="devstrip muted"><ha-icon icon="mdi:chip"></ha-icon><span>${p.address === 0 ? t.noInfoMaster : t.noInfo}</span></div>`;
       const item = (label, v) => (v ? `<span><em>${label}</em>${esc(v)}</span>` : "");
-      return `<div class="devstrip"><ha-icon icon="mdi:chip"></ha-icon>${item(t.model, i.model)}${item(t.hardware, i.hardware)}${item(t.firmware, i.software)}${item(t.serial, i.serial)}${item(t.made, i.manufacturing_date)}</div>`;
+      const upd = p.firmware && p.firmware.update ? `<button class="fwchip" data-act="tab" data-tab="info">${t.fwNew.replace("{v}", esc(p.firmware.latest))}</button>` : "";
+      return `<div class="devstrip"><ha-icon icon="mdi:chip"></ha-icon>${item(t.model, i.model)}${item(t.hardware, i.hardware)}${item(t.firmware, i.software)}${item(t.serial, i.serial)}${item(t.made, i.manufacturing_date)}${upd}</div>`;
     }
 
     // Top view of the pack: two rows of prismatic cells in series, busbars, BMS board with leads.
@@ -542,7 +543,20 @@
           ${row(t.address, String(p.address))}${row(t.runtime, p.runtime_s ? `${num(p.runtime_s / 86400, 0)} ${t.days}` : "")}
           ${row(t.mode, p.mode === "listen" ? t.listen : p.mode === "poll" ? t.poll : "")}
           ${row(t.energyIn, `${num(p.charged_kwh, 2)} kWh`)}${row(t.energyOut, `${num(p.discharged_kwh, 2)} kWh`)}
-        </div>`;
+          ${row(t.powerOns, i.power_on_count != null ? String(i.power_on_count) : "")}${row(t.devName, i.name)}
+          ${row(t.rcvTime, i.rcv_time_h != null ? `${num(i.rcv_time_h, 1)} h` : "")}${row(t.rfvTime, i.rfv_time_h != null ? `${num(i.rfv_time_h, 1)} h` : "")}
+          ${row(t.rebulk, i.rebulk_soc != null ? `${i.rebulk_soc} %` : "")}${row(t.emergency, i.emergency_min != null ? `${i.emergency_min} min` : "")}
+          ${row(t.protocols, [i.can_protocol != null ? `CAN #${i.can_protocol}` : "", i.uart1_protocol != null ? `RS485-1 #${i.uart1_protocol}` : "", i.uart2_protocol != null ? `RS485-2 #${i.uart2_protocol}` : ""].filter(Boolean).join(" · "))}
+        </div>
+        ${this._fwBox(p, t)}`;
+    }
+
+    _fwBox(p, t) {
+      const fw = p.firmware; const i = p.info;
+      if (!i || !i.software) return "";
+      if (!fw) return `<div class="fwbox"><ha-icon icon="mdi:update"></ha-icon><div>${t.fwUnknown}</div></div>`;
+      if (!fw.update) return `<div class="fwbox ok"><ha-icon icon="mdi:check-circle"></ha-icon><div>${t.fwOk.replace("{v}", esc(i.software))}</div></div>`;
+      return `<div class="fwbox new"><ha-icon icon="mdi:update"></ha-icon><div><b>${t.fwNew.replace("{v}", esc(fw.latest))}</b> (${esc(fw.date || "")})<br>${t.fwHow.replace("{cur}", esc(i.software)).replace("{hw}", esc(i.hardware || "?"))}${fw.url ? ` <a href="${esc(fw.url)}" target="_blank" rel="noreferrer">${t.fwLink}</a>` : ""}</div></div>`;
     }
   }
 
@@ -589,7 +603,7 @@
           <div class="mcells">${cells.slice(0, half).join("")}</div>
           <div class="mcells">${cells.slice(half).reverse().join("")}</div>
           <div class="mfoot"><span class="fdot ${pf}"></span>${fmtPower(p.power)}<span style="color:${deltaColor(pd)}">Δ ${pd} mV</span>${(p.problems || []).length ? `<ha-icon icon="mdi:alert" class="warn"></ha-icon>` : ""}</div>
-          <div class="mver">${p.info ? `HW ${esc(p.info.hardware || "–")} · FW ${esc(p.info.software || "–")}` : (p.address === 0 ? "master · –" : "–")}</div>
+          <div class="mver">${p.info ? `HW ${esc(p.info.hardware || "–")} · FW ${esc(p.info.software || "–")}${p.firmware && p.firmware.update ? ` <b class="fwup">→ ${esc(p.firmware.latest)}</b>` : ""}` : (p.address === 0 ? "master · –" : "–")}</div>
         </button>`;
       };
       const probs = b.problems || [];
@@ -658,19 +672,19 @@
       confirm: "Change {name} from {old} to {new} on {where}?", confirmSwitch: "Turn {name} {state} on {where}?", on: "on", off: "off", failed: "Not saved", hint: "Changes go straight into the BMS. With a master BMS they are sent in a quiet moment on the bus and confirmed by the BMS. Before the first change of the hour a backup of the pack is made automatically.",
       mismatch: "{n} setting(s) differ between the packs", from: "Copy from", preview: "Show what changes", apply: "Apply", cancel: "Cancel", nothing: "Nothing to change: already equal.", applied: "Done", backupNow: "Make a backup now", restore: "Restore", noBackups: "No backups yet.", auto: "automatic", manual: "by hand", backupMade: "Backup saved", restoreTitle: "Restore {file} to {pack}",
       names: { charge_switch: "Charging", discharge_switch: "Discharging", balance_switch: "Balancer", charge_voltage: "Charge voltage", float_voltage: "Float voltage", soc100_voltage: "100 % at", soc0_voltage: "0 % at", power_off_voltage: "Power off at", smart_sleep_voltage: "Smart sleep voltage", balance_start: "Balance from", balance_trigger: "Balance trigger", max_balance_current: "Max balance current", max_charge_current: "Max charge current", max_discharge_current: "Max discharge current", design_capacity_ah: "Battery capacity", cell_ovp: "Overvoltage protection", cell_ovpr: "Overvoltage recovery", cell_uvp: "Undervoltage protection", cell_uvpr: "Undervoltage recovery", charge_ot: "Charge too hot", charge_otpr: "… recovers at", discharge_ot: "Discharge too hot", discharge_otpr: "… recovers at", charge_ut: "Charge too cold", charge_utpr: "… recovers at", mos_ot: "MOS too hot", mos_otpr: "… recovers at", charge_ocp_delay: "Charge overcurrent: delay", charge_ocp_recovery: "… recovery time", discharge_ocp_delay: "Discharge overcurrent: delay", discharge_ocp_recovery: "… recovery time", scp_recovery: "Short circuit: recovery time" },
-      ro: { scp_delay_us: "Short-circuit reaction time", precharge_s: "Precharge time", smart_sleep_hours: "Sleep after", flags: { display_always_on: "Display always on", smart_sleep: "Smart sleep", special_charger: "Special charger", charging_float_mode: "Float charging", timed_stored_data: "Timed data logging", disable_temp_sensors: "Temperature sensors off" } } },
+      ro: { discharge_ut: "Discharge too cold", recovers: "back at", cell_count: "Cells", scp_delay_us: "Short-circuit reaction time", precharge_s: "Precharge time", smart_sleep_hours: "Sleep after", flags: { display_always_on: "Display always on", smart_sleep: "Smart sleep", special_charger: "Special charger", charging_float_mode: "Float charging", timed_stored_data: "Timed data logging", disable_temp_sensors: "Temperature sensors off", emergency: "Emergency mode", dry_alarm_intermittent: "Dry contact alarm intermittent", discharge_ocp2: "Discharge overcurrent level 2", discharge_ocp3: "Discharge overcurrent level 3", port_rs485: "Port in RS485 mode", disable_pcl_module: "PCL module off" } } },
     nl: { title: "BMS-instellingen", all: "Alle pakketten", groups: { switches: "Schakelaars", voltages: "Celspanningen", balancer: "Balancer", currents: "Stroom & capaciteit", delays: "Vertragingen & herstel", temps: "Temperatuur", readonly: "Overig (alleen lezen)", sync: "Pakketten gelijk trekken", backups: "Back-ups" },
       save: "Opslaan", saving: "Opslaan…", saved: "Opgeslagen", differs: "verschilt per pakket", locked: "Instellingen wijzigen staat uit. Zet het aan via Configureren → Verversen → Instellingen van de BMS mogen wijzigen.",
       confirm: "{name} wijzigen van {old} naar {new} op {where}?", confirmSwitch: "{name} {state}zetten op {where}?", on: "aan", off: "uit", failed: "Niet opgeslagen", hint: "Wijzigingen gaan direct de BMS in. Met een master-BMS worden ze in een stil moment op de bus verstuurd en door de BMS bevestigd. Voor de eerste wijziging van het uur wordt automatisch een back-up van het pakket gemaakt.",
       mismatch: "{n} instelling(en) verschillen tussen de pakketten", from: "Kopiëren van", preview: "Bekijk wat er verandert", apply: "Toepassen", cancel: "Annuleren", nothing: "Niets te wijzigen: al gelijk.", applied: "Klaar", backupNow: "Nu een back-up maken", restore: "Terugzetten", noBackups: "Nog geen back-ups.", auto: "automatisch", manual: "met de hand", backupMade: "Back-up opgeslagen", restoreTitle: "{file} terugzetten in {pack}",
       names: { charge_switch: "Laden", discharge_switch: "Ontladen", balance_switch: "Balanceren", charge_voltage: "Laadspanning", float_voltage: "Druppelspanning", soc100_voltage: "100 % bij", soc0_voltage: "0 % bij", power_off_voltage: "Uitschakelen bij", smart_sleep_voltage: "Slaapspanning", balance_start: "Balanceren vanaf", balance_trigger: "Balanceren vanaf verschil", max_balance_current: "Max. balanceerstroom", max_charge_current: "Max. laadstroom", max_discharge_current: "Max. ontlaadstroom", design_capacity_ah: "Accucapaciteit", cell_ovp: "Overspanningsbeveiliging", cell_ovpr: "Overspanning herstel", cell_uvp: "Onderspanningsbeveiliging", cell_uvpr: "Onderspanning herstel", charge_ot: "Laden te warm", charge_otpr: "… herstelt bij", discharge_ot: "Ontladen te warm", discharge_otpr: "… herstelt bij", charge_ut: "Laden te koud", charge_utpr: "… herstelt bij", mos_ot: "MOS te warm", mos_otpr: "… herstelt bij", charge_ocp_delay: "Laadstroom te hoog: vertraging", charge_ocp_recovery: "… hersteltijd", discharge_ocp_delay: "Ontlaadstroom te hoog: vertraging", discharge_ocp_recovery: "… hersteltijd", scp_recovery: "Kortsluiting: hersteltijd" },
-      ro: { scp_delay_us: "Reactietijd kortsluiting", precharge_s: "Voorlaadtijd", smart_sleep_hours: "Slapen na", flags: { display_always_on: "Display altijd aan", smart_sleep: "Slim slapen", special_charger: "Speciale lader", charging_float_mode: "Druppelladen", timed_stored_data: "Gegevens bewaren op tijd", disable_temp_sensors: "Temperatuursensoren uit" } } },
+      ro: { discharge_ut: "Ontladen te koud", recovers: "herstelt bij", cell_count: "Aantal cellen", scp_delay_us: "Reactietijd kortsluiting", precharge_s: "Voorlaadtijd", smart_sleep_hours: "Slapen na", flags: { display_always_on: "Display altijd aan", smart_sleep: "Slim slapen", special_charger: "Speciale lader", charging_float_mode: "Druppelladen", timed_stored_data: "Gegevens bewaren op tijd", disable_temp_sensors: "Temperatuursensoren uit", emergency: "Noodstand", dry_alarm_intermittent: "Droog contact knipperend alarm", discharge_ocp2: "Ontlaadstroom niveau 2", discharge_ocp3: "Ontlaadstroom niveau 3", port_rs485: "Poort in RS485-stand", disable_pcl_module: "PCL-module uit" } } },
     de: { title: "BMS-Einstellungen", all: "Alle Packs", groups: { switches: "Schalter", voltages: "Zellspannungen", balancer: "Balancer", currents: "Strom & Kapazität", delays: "Verzögerungen & Rückkehr", temps: "Temperatur", readonly: "Sonstiges (nur lesen)", sync: "Packs angleichen", backups: "Sicherungen" },
       save: "Speichern", saving: "Speichert…", saved: "Gespeichert", differs: "unterschiedlich je Pack", locked: "Ändern ist aus. Unter Konfigurieren → Aktualisierung → Ändern der BMS-Einstellungen erlauben einschalten.",
       confirm: "{name} von {old} auf {new} ändern bei {where}?", confirmSwitch: "{name} {state} bei {where}?", on: "einschalten", off: "ausschalten", failed: "Nicht gespeichert", hint: "Änderungen gehen direkt ins BMS. Mit Master-BMS werden sie in einer ruhigen Busphase gesendet und vom BMS bestätigt. Vor der ersten Änderung der Stunde wird das Pack automatisch gesichert.",
       mismatch: "{n} Einstellung(en) unterscheiden sich zwischen den Packs", from: "Kopieren von", preview: "Änderungen anzeigen", apply: "Übernehmen", cancel: "Abbrechen", nothing: "Nichts zu ändern: schon gleich.", applied: "Fertig", backupNow: "Jetzt sichern", restore: "Wiederherstellen", noBackups: "Noch keine Sicherungen.", auto: "automatisch", manual: "von Hand", backupMade: "Sicherung gespeichert", restoreTitle: "{file} in {pack} wiederherstellen",
       names: { charge_switch: "Laden", discharge_switch: "Entladen", balance_switch: "Balancer", charge_voltage: "Ladespannung", float_voltage: "Erhaltungsspannung", soc100_voltage: "100 % bei", soc0_voltage: "0 % bei", power_off_voltage: "Abschalten bei", smart_sleep_voltage: "Ruhespannung", balance_start: "Balancieren ab", balance_trigger: "Balancieren ab Differenz", max_balance_current: "Max. Balancierstrom", max_charge_current: "Max. Ladestrom", max_discharge_current: "Max. Entladestrom", design_capacity_ah: "Akkukapazität", cell_ovp: "Überspannungsschutz", cell_ovpr: "Überspannung Rückkehr", cell_uvp: "Unterspannungsschutz", cell_uvpr: "Unterspannung Rückkehr", charge_ot: "Laden zu warm", charge_otpr: "… zurück bei", discharge_ot: "Entladen zu warm", discharge_otpr: "… zurück bei", charge_ut: "Laden zu kalt", charge_utpr: "… zurück bei", mos_ot: "MOS zu warm", mos_otpr: "… zurück bei", charge_ocp_delay: "Ladeüberstrom: Verzögerung", charge_ocp_recovery: "… Rückkehrzeit", discharge_ocp_delay: "Entladeüberstrom: Verzögerung", discharge_ocp_recovery: "… Rückkehrzeit", scp_recovery: "Kurzschluss: Rückkehrzeit" },
-      ro: { scp_delay_us: "Kurzschluss-Reaktionszeit", precharge_s: "Vorladezeit", smart_sleep_hours: "Ruhe nach", flags: { display_always_on: "Display immer an", smart_sleep: "Smart Sleep", special_charger: "Spezielles Ladegerät", charging_float_mode: "Erhaltungsladung", timed_stored_data: "Zeitgesteuerte Datenspeicherung", disable_temp_sensors: "Temperatursensoren aus" } } },
+      ro: { discharge_ut: "Entladen zu kalt", recovers: "zurück bei", cell_count: "Zellen", scp_delay_us: "Kurzschluss-Reaktionszeit", precharge_s: "Vorladezeit", smart_sleep_hours: "Ruhe nach", flags: { display_always_on: "Display immer an", smart_sleep: "Smart Sleep", special_charger: "Spezielles Ladegerät", charging_float_mode: "Erhaltungsladung", timed_stored_data: "Zeitgesteuerte Datenspeicherung", disable_temp_sensors: "Temperatursensoren aus", emergency: "Notbetrieb", dry_alarm_intermittent: "Trockenkontakt-Alarm intermittierend", discharge_ocp2: "Entladeüberstrom Stufe 2", discharge_ocp3: "Entladeüberstrom Stufe 3", port_rs485: "Port im RS485-Modus", disable_pcl_module: "PCL-Modul aus" } } },
   };
 
   class JkSettingsCard extends JkBase {
@@ -772,6 +786,8 @@
       if (st.scp_delay_us) rows.push([s.ro.scp_delay_us, `${num(st.scp_delay_us)} µs`]);
       if (st.precharge_s) rows.push([s.ro.precharge_s, `${num(st.precharge_s)} s`]);
       if (st.smart_sleep_hours) rows.push([s.ro.smart_sleep_hours, `${num(st.smart_sleep_hours)} h`]);
+      if (st.discharge_ut != null) rows.push([s.ro.discharge_ut, `${num(st.discharge_ut)} °C${st.discharge_utpr != null ? ` (${s.ro.recovers} ${num(st.discharge_utpr)} °C)` : ""}`]);
+      if (st.cell_count) rows.push([s.ro.cell_count, String(st.cell_count)]);
       const flags = st.flags || {};
       const chips = Object.keys(s.ro.flags).filter((k) => k in flags).map((k) => `<span class="swc ${flags[k] ? "on" : ""}"><i></i>${s.ro.flags[k]}</span>`).join("");
       if (!rows.length && !chips) return "";
@@ -1510,6 +1526,12 @@
     .mfoot .fdot.charging { color:#45D69A; } .mfoot .fdot.discharging { color:#F4B740; } .mfoot .fdot.idle { color:#5AA9FF; }
     .mfoot span:last-of-type { margin-left:auto; }
     .warn { color:#FF5C61; --mdc-icon-size:16px; }
+    .fwbox { display:flex; gap:10px; align-items:flex-start; margin-top:10px; background:var(--panel); border-radius:12px; padding:10px 12px; font-size:.82rem; line-height:1.4; }
+    .fwbox ha-icon { --mdc-icon-size:20px; color:var(--muted); flex:none; }
+    .fwbox.ok ha-icon { color:#45D69A; } .fwbox.new { border:1px solid rgba(90,169,255,.5); } .fwbox.new ha-icon { color:var(--accent); }
+    .fwbox a { color:var(--accent); }
+    .fwchip { background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent); border:0; border-radius:999px; padding:3px 10px; font:inherit; font-size:.74rem; font-weight:600; cursor:pointer; }
+    .fwup { color:var(--accent); font-weight:600; }
     .mver { font-size:.68rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .devstrip { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin-top:10px; padding:9px 12px; background:var(--panel); border-radius:12px; font-size:.78rem; }
     .devstrip ha-icon { --mdc-icon-size:18px; color:var(--muted); }

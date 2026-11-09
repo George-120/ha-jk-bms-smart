@@ -461,6 +461,11 @@
       "set_smart_sleep_voltage": {
         "name": "Smart sleep voltage"
       }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
     }
   },
   "exceptions": {
