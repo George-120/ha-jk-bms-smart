@@ -1,6 +1,6 @@
 /* JK BMS Smart cards — battery packs with their 16 prismatic cells, served by the jk_bms_smart integration. */
 (() => {
-  const VERSION = "1.2.0";
+  const VERSION = "1.2.1";
   const BASE = document.currentScript && document.currentScript.src
     ? new URL(".", document.currentScript.src).href
     : "/jk_bms_smart/";

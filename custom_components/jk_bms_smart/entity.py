@@ -36,13 +36,19 @@ def bank_device(manager: JkBmsManager) -> DeviceInfo:
 
 
 def unit_device(manager: JkBmsManager, address: int) -> DeviceInfo:
+    state = manager.state(address)
+    bms = state.info if state else None
     info = DeviceInfo(
         identifiers={unit_identifier(manager, address)},
         name=manager.unit_name(address),
         manufacturer="JK BMS (Jikong)",
-        model="JK inverter BMS",
-        hw_version=f"RS485 address {address}",
+        model=(bms and bms.model) or "JK inverter BMS",
+        hw_version=f"{bms.hardware} · RS485 {address}" if bms and bms.hardware else f"RS485 address {address}",
     )
+    if bms and bms.software:
+        info["sw_version"] = bms.software
+    if bms and bms.serial:
+        info["serial_number"] = bms.serial
     if not _VIA_DEVICE_ID:
         info["via_device"] = bank_identifier(manager)
     return info

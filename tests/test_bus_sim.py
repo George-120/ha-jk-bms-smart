@@ -15,7 +15,16 @@ sys.path.insert(0, str(PKG))
 import importlib  # noqa: E402
 import types  # noqa: E402
 
-from test_protocol import ack, cells_frame, settings_frame  # noqa: E402
+from test_protocol import ack, cells_frame, make_frame, settings_frame  # noqa: E402
+
+
+def info_frame() -> bytes:
+    raw = bytearray(make_frame(3, {}))
+    raw[6:6 + 13] = b"JK_PB2A16S30P"
+    raw[30:30 + 5] = b"19.27"
+    raw[86:86 + 10] = b"5011234567"
+    raw[-1] = sum(raw[:-1]) & 0xFF
+    return bytes(raw)
 
 # bus.py and protocol.py need no Home Assistant: load them as a bare package (skip __init__.py)
 _pkg = types.ModuleType("jkbus_pkg")
@@ -126,6 +135,10 @@ async def _master_and_slave_server(reader, writer):
                 writer.write(p.with_crc(buf[:6]))
                 await writer.drain()
                 buf = b""
+            elif len(buf) >= 11 and buf[:11] == p.build_request(buf[0], p.REG_INFO):
+                writer.write(info_frame() + ack(buf[0], p.REG_INFO))
+                await writer.drain()
+                buf = b""
     except (ConnectionError, asyncio.CancelledError):
         pass
     finally:
@@ -147,3 +160,22 @@ def test_write_in_listen_mode_waits_for_gap_and_gets_ack():
         return mode
 
     assert _run(main()) == busmod.MODE_LISTEN
+
+
+def test_listen_mode_asks_for_device_info_in_a_gap():
+    async def main():
+        server = await asyncio.start_server(_master_and_slave_server, "127.0.0.1", 0)
+        port = server.sockets[0].getsockname()[1]
+        loop = asyncio.get_running_loop()
+        bus = busmod.JkBus(loop, {"type": "tcp", "host": "127.0.0.1", "port": port})
+        await bus.open()
+        await bus.detect_mode(1.5)
+        bus.known = {1}
+        await bus.fetch_info()
+        info = bus.states[1].info
+        await bus.close()
+        server.close()
+        return info
+
+    info = _run(main())
+    assert info is not None and info.model == "JK_PB2A16S30P" and info.software == "19.27" and info.serial == "5011234567"

@@ -22,6 +22,7 @@ from homeassistant.util import dt as dt_util
 
 from .alerts import Alerts
 from .bus import BmsState, JkBus
+from .protocol import DeviceInfo
 from .health import HealthTracker
 from .labels import label
 from .protocol import COMPARE_KEYS, WRITABLE, plan_changes
@@ -91,6 +92,12 @@ class JkBmsManager:
         data = await self._store.async_load() or {}
         self.energy = {int(k): v for k, v in (data.get("energy") or {}).items()}
         self.health = HealthTracker((await self._health_store.async_load() or {}).get("packs"))
+        # device info (model, firmware, serial) from the last run: shown right away after a restart
+        for key, info in (data.get("info") or {}).items():
+            try:
+                self.bus.states.setdefault(int(key), BmsState(int(key))).info = DeviceInfo(**info)
+            except (TypeError, ValueError):
+                continue
         await self.bus.open()  # raises BusError/PortBusy -> ConfigEntryNotReady
         self.bus.mode = self.entry.data.get("mode")
         self.bus.start([u.address for u in self.units])
@@ -108,7 +115,8 @@ class JkBmsManager:
         self.alerts.clear()
 
     async def _async_save(self, *_: Any) -> None:
-        await self._store.async_save({"energy": {str(k): v for k, v in self.energy.items()}})
+        info = {str(a): s.info.as_dict() for a, s in self.bus.states.items() if s.info}
+        await self._store.async_save({"energy": {str(k): v for k, v in self.energy.items()}, "info": info})
         await self._health_store.async_save({"packs": self.health.as_store()})
 
     # ---- updates
@@ -117,6 +125,8 @@ class JkBmsManager:
     def _on_bus_update(self, address: int, frame_type: int) -> None:
         if address >= 0 and frame_type == 2:
             self._integrate(address)
+        if address >= 0 and frame_type == 3:
+            self.hass.async_create_task(self._async_save())  # keep new device info
         # coalesce: at most one entity refresh per second
         if self._pending is None:
             self._pending = async_call_later(self.hass, 1.0, self._flush)

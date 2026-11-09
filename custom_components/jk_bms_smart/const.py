@@ -4,7 +4,7 @@ from __future__ import annotations
 
 DOMAIN = "jk_bms_smart"
 NAME = "JK BMS Smart"
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 
 CARD_BASE = f"/{DOMAIN}"
 CARD_URL = f"{CARD_BASE}/jk-bms-smart-card.js"

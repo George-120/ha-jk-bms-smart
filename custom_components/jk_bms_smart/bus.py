@@ -466,7 +466,27 @@ class JkBus:
             await self.request(addr, REG_CELLS)
         return found
 
+    async def fetch_info(self, force: bool = False) -> None:
+        """Listen mode: ask every known BMS for its device info in a quiet moment on the bus."""
+        for addr in sorted(self.known or []):
+            state = self.states.get(addr)
+            if state and state.info and not force:
+                continue
+            before = state.info if state else None
+            for _attempt in range(3):
+                if not await self._wait_quiet(0.12, 20):
+                    return
+                await self.request(addr, REG_INFO, timeout=0.6)
+                state = self.states.get(addr)
+                if state and state.info is not None and state.info is not before:
+                    break
+                await asyncio.sleep(0.3)
+
+    _started = 0.0
+    _info_rounds = 0
+
     def start(self, addresses: list[int]) -> None:
+        self._started = time.monotonic()
         self.known = set(addresses)
         self._task = self._loop.create_task(self._run())
 
@@ -493,9 +513,19 @@ class JkBus:
                     backoff = min(backoff * 2, 60)
                     continue
             if self.mode == MODE_LISTEN or self.master_present:
-                # a master BMS does the asking; settings/info pass by every few cycles
+                # a master BMS does the asking; cells and settings pass by every few cycles.
+                # The master never asks for device info (model, firmware, serial), so we ask
+                # for it ourselves in a quiet gap: at start until we have it, then every 6 hours.
                 self.mode = MODE_LISTEN
                 await asyncio.sleep(self.poll_interval)
+                now = time.monotonic()
+                missing = any(not (self.states.get(a) and self.states[a].info) for a in (self.known or []))
+                # a BMS that never answers (old firmware) is asked less often after 10 tries
+                retry = 120 if self._info_rounds < 10 else 3600
+                if now - self._started > 15 and now - last_info > (retry if missing else 6 * 3600):
+                    last_info = now
+                    self._info_rounds += 1 if missing else 0
+                    await self.fetch_info(force=not missing)
                 if self.on_update:
                     self.on_update(-1, 0)
                 continue
